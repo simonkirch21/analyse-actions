@@ -500,6 +500,18 @@ img { width: 100%; height: auto; border-radius: 6px; }
 .vigil li::marker { color: var(--rouge); }
 .pos { color: var(--vert); } .neg { color: var(--rouge); }
 .note { color: var(--doux); font-size: 13px; }
+/* Thème clair (choisi dans l'application) */
+:root[data-theme="light"] { --fond:#F6F3EC; --carte:#FFFFFF; --texte:#141B2D; --doux:#5E6578; --bord:#E3DDCF;
+  --accent:#946F22; --or:#946F22; --vert:#12805A; --rouge:#C23B2E; color-scheme: light;
+  --notion-fond:#EEF2FA; --lecture-fond:#FBF6EA; }
+:root[data-theme="light"] .niveau.bon { background:#DDF3E6; color:#11643F; }
+:root[data-theme="light"] .niveau.moyen { background:#FBEFD5; color:#7A5410; }
+:root[data-theme="light"] .niveau.mauvais { background:#FBE1DD; color:#9C2A1F; }
+:root[data-theme="light"] .niveau.neutre { background:#E2EBFA; color:#24508F; }
+:root[data-theme="light"] .kpi, :root[data-theme="light"] .carte { box-shadow: 0 1px 2px rgba(20,27,45,.05); }
+/* Graphiques dessinés sur fond sombre : inversés en clair (teintes conservées) */
+:root[data-theme="light"] img[alt="graphique"] { filter: invert(1) hue-rotate(180deg) saturate(1.15); }
+:root[data-theme="light"] .na-barre { background: linear-gradient(90deg, #F2C9C2, #ECE6D8 50%, #C5E8D5); }
 """
 
 

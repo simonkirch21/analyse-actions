@@ -304,6 +304,26 @@ def api_dcf_excel(ticker):
     return _action_fictive(preparer)
 
 
+@app.get("/api/recherche")
+def api_recherche():
+    """Recherche en direct sur Yahoo Finance : toute action cotée, même hors de la liste intégrée."""
+    q = (request.args.get("q") or "").strip()[:60]
+    if len(q) < 2:
+        return jsonify([])
+    try:
+        import yfinance as yf
+        quotes = yf.Search(q, max_results=12, news_count=0).quotes
+    except Exception:
+        return jsonify([])
+    res = []
+    for x in quotes:
+        if x.get("quoteType") not in ("EQUITY", "ETF") or not x.get("symbol"):
+            continue
+        res.append({"ticker": x["symbol"], "nom": (x.get("longname") or x.get("shortname") or x["symbol"]).strip(),
+                    "place": x.get("exchDisp") or "", "type": "ETF" if x["quoteType"] == "ETF" else "Action", "yahoo": True})
+    return jsonify(res)
+
+
 @app.get("/api/journal")
 def api_journal():
     return jsonify(journal.lire())

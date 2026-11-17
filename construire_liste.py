@@ -3,6 +3,10 @@ Construit la liste des actions proposées dans l'application :
   - toutes les actions des marchés Euronext (Paris, Amsterdam, Bruxelles,
     Lisbonne, Dublin, Milan, Oslo), d'après le fichier officiel d'Euronext
   - les ~500 valeurs du S&P 500, d'après Wikipédia
+  - toutes les actions cotées aux États-Unis (Nasdaq, NYSE, NYSE American), d'après les fichiers
+    publics de Nasdaq Trader (hors ETF, warrants, droits, unités et actions de préférence)
+  - les grands indices européens hors Euronext : DAX, FTSE 100 et 250, SMI, IBEX 35, OMX Stockholm 30
+  (toute autre action connue de Yahoo Finance reste accessible par la recherche en direct de l'application)
 
 Résultat : data/actions.json (à relancer de temps en temps pour mettre à jour).
 
@@ -10,6 +14,7 @@ Lancer :  .venv/bin/python construire_liste.py
 """
 
 import io
+import re
 import json
 from pathlib import Path
 
@@ -94,16 +99,96 @@ def liste_sp500() -> list:
     } for _, l in df.iterrows()]
 
 
+EXCLUS_US = ("warrant", "right", " unit", "units", "preferred", "depositary shares representing", " notes", "debenture",
+             "%", "subordinated", "trust preferred", "acquisition corp", "be redeemable")
+BOURSES_US = {"N": "NYSE", "A": "NYSE American", "P": "NYSE Arca", "Z": "Cboe BZX", "V": "IEX"}
+
+
+def _nom_us(nom: str) -> str:
+    """« Apple Inc. - Common Stock » -> « Apple Inc. »"""
+    for coupe in (" - Common Stock", " Common Stock", " - Class A", " Class A Common", " - Ordinary Shares", " Ordinary Shares",
+                  " - American Depositary Shares", " American Depositary Shares", " - American Depositary Share"):
+        if coupe in nom:
+            nom = nom.split(coupe)[0]
+    return nom.strip(" -,")
+
+
+def liste_usa() -> list:
+    """Toutes les actions cotées aux États-Unis (fichiers publics de Nasdaq Trader)."""
+    actions = []
+    for url, place_fixe in (("https://www.nasdaqtrader.com/dynamic/SymDir/nasdaqlisted.txt", "Nasdaq"),
+                            ("https://www.nasdaqtrader.com/dynamic/SymDir/otherlisted.txt", None)):
+        texte = requests.get(url, headers=ENTETES, timeout=60).text
+        df = pd.read_csv(io.StringIO(texte), sep="|", dtype=str).fillna("")
+        df = df[~df.iloc[:, 0].str.startswith("File Creation")]
+        for _, l in df.iterrows():
+            symbole = l.get("Symbol") or l.get("ACT Symbol")
+            nom = l["Security Name"]
+            if l.get("ETF") == "Y" or l.get("Test Issue") == "Y" or not symbole or "$" in symbole:
+                continue
+            if any(x in nom.lower() for x in EXCLUS_US):
+                continue
+            place = place_fixe or BOURSES_US.get(l.get("Exchange"), "États-Unis")
+            if place in ("NYSE Arca", "Cboe BZX", "IEX"):
+                continue
+            actions.append({"ticker": symbole.replace(".", "-"), "nom": _nom_us(nom), "place": place,
+                            "devise": "USD", "liquidite": 0})
+    return actions
+
+
+def _depuis_wikipedia(url: str, colonne: str, suffixe: str, place: str, devise: str, transformer=None) -> list:
+    tables = pd.read_html(io.StringIO(requests.get(url, headers=ENTETES, timeout=60).text))
+    for t in tables:
+        cols = [str(c) for c in t.columns]
+        if colonne in cols and len(t) >= 19:
+            nom_col = next((c for c in ("Company", "Name", "Security") if c in cols), None)
+            res = []
+            for _, l in t.iterrows():
+                tk = str(l[colonne]).strip()
+                if not tk or tk == "nan":
+                    continue
+                tk = transformer(tk) if transformer else tk
+                if not re.search(r"\.[A-Z]{1,2}$", tk):      # déjà un suffixe de place (ex. AIR.PA dans le DAX) : on garde
+                    tk += suffixe
+                res.append({"ticker": tk, "nom": str(l[nom_col]).strip() if nom_col else tk, "place": place,
+                            "devise": devise, "liquidite": 0})
+            return res
+    return []
+
+
+def liste_europe() -> list:
+    sources = [
+        ("https://en.wikipedia.org/wiki/DAX", "Ticker", ".DE", "Francfort (DAX)", "EUR", None),
+        ("https://en.wikipedia.org/wiki/FTSE_100_Index", "Ticker", ".L", "Londres (FTSE 100)", "GBP", lambda t: t.replace(".", "-").rstrip("-")),
+        ("https://en.wikipedia.org/wiki/FTSE_250_Index", "Ticker", ".L", "Londres (FTSE 250)", "GBP", lambda t: t.replace(".", "-").rstrip("-")),
+        ("https://en.wikipedia.org/wiki/Swiss_Market_Index", "Ticker", ".SW", "Zurich (SMI)", "CHF", lambda t: t.split(".")[0]),
+        ("https://en.wikipedia.org/wiki/IBEX_35", "Ticker", ".MC", "Madrid (IBEX 35)", "EUR", lambda t: t.split(".")[0]),
+        ("https://en.wikipedia.org/wiki/OMX_Stockholm_30", "Ticker", ".ST", "Stockholm (OMXS30)", "SEK", lambda t: t.replace(" ", "-")),
+    ]
+    res = []
+    for url, col, suf, place, dev, f in sources:
+        try:
+            l = _depuis_wikipedia(url, col, suf, place, dev, f)
+            print(f"  {place:22s}: {len(l)}")
+            res += l
+        except Exception as e:
+            print(f"  {place:22s}: échec ({e})")
+    return res
+
+
 if __name__ == "__main__":
     DOSSIER.mkdir(exist_ok=True)
     euronext = liste_euronext()
     sp500 = liste_sp500()
     print(f"Euronext : {len(euronext)} actions")
     print(f"S&P 500  : {len(sp500)} actions")
+    usa = liste_usa()
+    print(f"États-Unis (toutes cotations) : {len(usa)} actions")
+    europe = liste_europe()
 
-    # Doublons éventuels (même ticker) : on garde la 1re occurrence
+    # Doublons éventuels (même ticker) : on garde la 1re occurrence (S&P 500 et Euronext d'abord)
     vus, toutes = set(), []
-    for a in sp500 + euronext:
+    for a in sp500 + euronext + europe + usa:
         if a["ticker"] not in vus:
             vus.add(a["ticker"])
             toutes.append(a)

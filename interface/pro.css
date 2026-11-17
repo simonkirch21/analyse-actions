@@ -149,7 +149,7 @@ button:not(:disabled):active, .bouton:not(:disabled):active, .chip:active { tran
 /* ---------- Modèle DCF ---------- */
 #panneau-dcf { max-width: none; margin-right: 32px; }
 #panneau-dcf h3 { margin: 26px 0 8px; font-size: 17px; }
-.dcf-bleu { color: #6EA8FF; font-weight: 600; }
+.dcf-bleu { color: var(--saisie); font-weight: 600; }
 .dcf-kpis .v { font-family: var(--mono); font-size: 19px; }
 .dcf-erreur { color: var(--rouge); font-size: 13.5px; min-height: 0; margin: 4px 0; }
 .dcf-erreur:empty { display: none; }
@@ -160,12 +160,12 @@ button:not(:disabled):active, .bouton:not(:disabled):active, .chip:active { tran
 .t-dcf tbody th { text-align: left; font: 13.5px -apple-system, sans-serif; color: var(--texte); }
 .t-dcf .hist { color: var(--doux); background: color-mix(in srgb, var(--fond) 70%, transparent); }
 .t-dcf tr.total th, .t-dcf tr.total td { font-weight: 700; color: var(--texte); border-top: 1px solid var(--doux); }
-.t-dcf tr.entree th { color: #6EA8FF; }
+.t-dcf tr.entree th { color: var(--saisie); }
 .dcf-cons { display: inline-block; font-size: 9.5px; padding: 1px 5px; border-radius: 99px; background: var(--or-doux); color: var(--or);
   text-transform: none; letter-spacing: 0; margin-left: 4px; }
-.dcf-in { width: 72px; font: 13px var(--mono); text-align: right; color: #6EA8FF; background: color-mix(in srgb, #6EA8FF 8%, var(--fond));
-  border: 1px solid color-mix(in srgb, #6EA8FF 30%, var(--bord)); border-radius: 6px; padding: 4px 6px; }
-.dcf-in:hover { border-color: #6EA8FF; }
+.dcf-in { width: 72px; font: 13px var(--mono); text-align: right; color: var(--saisie); background: color-mix(in srgb, var(--saisie) 8%, var(--fond));
+  border: 1px solid color-mix(in srgb, var(--saisie) 30%, var(--bord)); border-radius: 6px; padding: 4px 6px; }
+.dcf-in:hover { border-color: var(--saisie); }
 .dcf-grille { display: grid; grid-template-columns: repeat(auto-fit, minmax(420px, 1fr)); gap: 10px 36px; }
 .dcf-params { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 8px 18px; margin: 6px 0 10px; }
 .dcf-param { display: flex; align-items: center; gap: 8px; font-size: 13.5px; }
@@ -244,3 +244,7 @@ button:not(:disabled):active, .bouton:not(:disabled):active, .chip:active { tran
 
 /* Tuiles de chiffres : seul le cadre extérieur est encadré */
 .kpis-s > div div { background: none; border: 0; padding: 0; border-radius: 0; }
+
+/* ---------- Sélecteur de thème ---------- */
+.bouton-theme { min-width: 38px; text-align: center; font-family: -apple-system, sans-serif; font-size: 15px; padding: 6px 10px; }
+.bouton-theme span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }

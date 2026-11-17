@@ -114,7 +114,7 @@ def construire(a: dict) -> dict:
     if cible is None:
         try:
             action = next((x for x in base_fondamentale.univers() if x["ticker"] == t), {"ticker": t, "nom": t, "place": ""})
-            cible = base_fondamentale._fiche(action, {"EUR": 1.0, "USD": 0.92})
+            cible = base_fondamentale._fiche(action, base_fondamentale.TauxVersEuro())
         except Exception:
             cible = None
     secteur = (cible or {}).get("secteur") or a["infos"].get("Secteur") or ""

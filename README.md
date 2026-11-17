@@ -40,8 +40,11 @@ de ton compte) : ouvre-la depuis le Launchpad, Spotlight (Cmd+Espace) ou le Find
   (Le Monde, France 24, La Tribune, Investing). Bouton « + » sur chaque action pour l'ajouter au portefeuille.
 - Chaque rapport commence par les **actualités récentes de l'entreprise** (presse française et internationale).
 - Tape le début d'un nom ou d'un ticker : les suggestions s'affichent
-  (≈ 2 100 actions : toutes les places Euronext et le S&P 500).
-- ↑ ↓ pour choisir, Entrée pour lancer l'analyse ; filtres Tous / Euronext / S&P 500 ; choix de la période.
+  (≈ 7 700 actions : toutes les places Euronext, toutes les actions cotées aux États-Unis, DAX, FTSE 100 et 250,
+  SMI, IBEX 35, OMX Stockholm 30). Si une action n'y est pas, la **recherche interroge Yahoo Finance en direct** :
+  toute action cotée dans le monde (Tokyo, Hong Kong, Toronto…) peut être analysée.
+- **Thème sombre, clair ou automatique** (bouton ☾ / ☀ / ◐ à côté de la barre de commandes), appliqué aussi aux rapports.
+- ↑ ↓ pour choisir, Entrée pour lancer l'analyse ; filtres Tous / Euronext / États-Unis / Europe ; choix de la période.
 - Raccourci Cmd+K pour revenir à la recherche.
 - **Comparer deux actions** : bouton en haut de la fenêtre, puis deux champs de recherche ; tous les
   indicateurs côte à côte, graphiques superposés et conclusion automatique (analyse comparative du cours).

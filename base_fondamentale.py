@@ -41,7 +41,8 @@ def _f(x):
 
 def univers() -> list:
     liste = json.loads(chemins.liste_actions().read_text(encoding="utf-8"))
-    return [a for a in liste if "Growth" not in a["place"]]
+    places = {"S&P 500", "Paris", "Amsterdam", "Bruxelles", "Lisbonne", "Dublin", "Milan", "Oslo"}
+    return [a for a in liste if a["place"] in places]
 
 
 def _fiche(action: dict, taux: dict) -> dict:
@@ -135,6 +136,21 @@ def charger(reconstruire_si_perimee: bool = True):
     return d["actions"] if d else None
 
 
+class TauxVersEuro(dict):
+    """Taux de change vers l'euro, téléchargés à la demande (yen, livre, franc suisse…)."""
+    def get(self, devise, defaut=None):
+        if devise not in self:
+            if devise in (None, "", "EUR"):
+                self[devise] = 1.0
+            else:
+                from partie9_valorisation import taux_change
+                fx = taux_change(devise, "EUR")
+                if devise == "GBp":                       # cotations londoniennes en pence
+                    fx = taux_change("GBP", "EUR") / 100
+                self[devise] = fx if fx == fx else defaut   # NaN -> valeur par défaut
+        return super().get(devise, defaut)
+
+
 def concurrents(ticker: str, n: int = 4) -> list:
     """Entreprises de la même industrie (sinon du même secteur), de taille la plus proche."""
     base = charger()
@@ -143,7 +159,7 @@ def concurrents(ticker: str, n: int = 4) -> list:
     cible = next((a for a in base if a["ticker"] == ticker), None)
     if not cible:                       # absente de la base : on la consulte directement
         action = next((a for a in univers() if a["ticker"] == ticker), {"ticker": ticker, "nom": ticker, "place": ""})
-        cible = _fiche(action, {"EUR": 1.0, "USD": 0.92})
+        cible = _fiche(action, TauxVersEuro())
     if not cible or not cible.get("capi_eur"):
         return []
     def distance(a):

@@ -184,7 +184,7 @@ def phares() -> list:
 def univers() -> list:
     a = json.loads(LISTE.read_text(encoding="utf-8"))
     sp = [x["ticker"] for x in a if x["place"] == "S&P 500"]
-    eu = sorted([x for x in a if x["place"] != "S&P 500" and "Growth" not in x["place"]],
+    eu = sorted([x for x in a if x["place"] in ("Paris", "Amsterdam", "Bruxelles", "Lisbonne", "Dublin", "Milan", "Oslo")],
                 key=lambda x: -x.get("liquidite", 0))[:100]
     return sp + [x["ticker"] for x in eu]
 

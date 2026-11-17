@@ -6,6 +6,14 @@
 <meta name="theme-color" content="#0A0F1C">
 <link rel="icon" href="data:,">
 <title>Analyse Actions</title>
+<script>
+  // Thème : « sombre », « clair » ou « auto » (suit le réglage du Mac) ; appliqué avant l'affichage
+  (function () {
+    const choix = localStorage.getItem("theme") || "sombre";
+    const clair = choix === "clair" || (choix === "auto" && matchMedia("(prefers-color-scheme: light)").matches);
+    document.documentElement.dataset.theme = clair ? "light" : "dark";
+  })();
+</script>
 <link rel="stylesheet" href="pro.css">
 <style>
 :root {
@@ -68,7 +76,7 @@ body.mode-comparer #vs { display: inline; }
 .sugg mark { background: none; color: inherit; font-weight: 700; }
 .badge { font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 99px; white-space: nowrap;
          border: 1px solid currentColor; }
-.badge.us { color: var(--us); } .badge.eu { color: var(--eu); } .badge.growth { color: var(--growth); }
+.badge.us { color: var(--us); } .badge.eu { color: var(--eu); } .badge.growth { color: var(--growth); } .badge.yahoo { color: var(--doux); }
 .entete-sugg { padding: 6px 10px 4px; font-size: 12px; color: var(--doux); text-transform: uppercase;
                letter-spacing: .04em; }
 .vide { padding: 16px; color: var(--doux); text-align: center; }
@@ -284,6 +292,19 @@ body.vue-pf #ajout-suivi { display: none; }
   }
 }
 
+/* Thème clair : papier ivoire, encre marine, or plus soutenu pour rester lisible sur fond clair */
+:root[data-theme="light"] {
+  --fond: #F6F3EC; --carte: #FFFFFF; --texte: #141B2D; --doux: #5E6578; --bord: #E3DDCF;
+  --accent: #946F22; --accent-doux: rgba(148,111,34,.10); --survol: #F2EDE1; --sur-accent: #FFFFFF;
+  --or: #946F22; --or-doux: rgba(148,111,34,.10);
+  --eu: #12805A; --rouge: #C23B2E; --orange: #B4621A; --us: #2B5EB5; --growth: #9A6A12;
+  --ombre: 0 1px 2px rgba(20,27,45,.06), 0 10px 28px rgba(20,27,45,.08);
+  --saisie: #2B5EB5;
+  color-scheme: light;
+}
+:root { --saisie: #6EA8FF; }
+:root[data-theme="light"] { --saisie: #2B5EB5; }
+
 body { font-variant-numeric: tabular-nums; -webkit-font-smoothing: antialiased; letter-spacing: -0.003em; }
 h1, h2, h3, .titre-section, .gg-tete .t, .boite h2 { font-family: var(--serif); font-weight: 600; letter-spacing: -0.01em; }
 .titre { align-items: center; }
@@ -371,7 +392,7 @@ button:active:not(:disabled), .chip:active, .indice:active { transform: scale(0.
   <div class="titre"><h1><svg class="logo" viewBox="0 0 34 34" aria-hidden="true">
       <rect x="1" y="1" width="32" height="32" rx="8" fill="var(--accent)"/>
       <path d="M7 23l6-6 4 4 9-10" fill="none" stroke="var(--sur-accent)" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
-      <circle cx="26" cy="11" r="2.6" fill="var(--or)"/></svg>Analyse Actions</h1><span>Euronext · S&amp;P 500 · Économie</span></div>
+      <circle cx="26" cy="11" r="2.6" fill="var(--or)"/></svg>Analyse Actions</h1><span>Euronext · États-Unis · Europe · Monde</span></div>
   <div class="modes">
     <div id="mode" class="modes-groupes">
       <div class="segment" aria-label="Marchés">
@@ -415,7 +436,8 @@ button:active:not(:disabled), .chip:active, .indice:active { transform: scale(0.
     <div class="segment" id="filtre">
       <button data-f="tous" class="on">Tous</button>
       <button data-f="eu">Euronext</button>
-      <button data-f="us">S&amp;P 500</button>
+      <button data-f="us">États-Unis</button>
+      <button data-f="europe" title="Francfort, Londres, Zurich, Madrid, Stockholm">Europe</button>
     </div>
     <select id="periode" title="Période analysée">
       <option value="1y">1 an</option><option value="2y">2 ans</option>
@@ -423,6 +445,7 @@ button:active:not(:disabled), .chip:active, .indice:active { transform: scale(0.
       <option value="max">Max</option>
     </select>
     <button class="bouton" id="lancer-comp" disabled>Comparer</button>
+    <button class="bouton-cmd bouton-theme" id="bouton-theme" title="Changer de thème (sombre, clair, ou automatique selon le Mac)" aria-label="Changer de thème"></button>
     <button class="bouton-cmd" id="ouvrir-cmd" title="Barre de commandes : tape une action ou une commande">⌘K <span>Commandes</span></button>
   </div>
   <div class="recents" id="recents"></div>
@@ -460,7 +483,7 @@ button:active:not(:disabled), .chip:active, .indice:active { transform: scale(0.
 
 <main>
   <section class="accueil" id="accueil">
-    <p class="intro"><b id="nb-total">…</b> actions (Euronext et S&amp;P 500) · 8 parties d'analyse ·
+    <p class="intro"><b id="nb-total">…</b> actions (Euronext, toutes les actions américaines, grands indices européens), et toute autre action de Yahoo Finance par la recherche · 8 parties d'analyse ·
       comparaison de deux entreprises · portefeuille et Markowitz · exports PDF et Excel.
       Tape un nom dans la barre de recherche, ou clique sur une action ci-dessous.</p>
 
@@ -764,7 +787,9 @@ const normaliser = (s) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase
 const echapper = (s) => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 
 fetch("/api/actions").then(r => r.json()).then(liste => {
-  ACTIONS = liste.map(a => ({ ...a, _t: normaliser(a.ticker), _n: normaliser(a.nom), _us: a.place === "S&P 500" }));
+  const zone = (p) => ["S&P 500", "Nasdaq", "NYSE", "NYSE American"].includes(p) ? "us"
+    : ["Paris", "Amsterdam", "Bruxelles", "Lisbonne", "Dublin", "Milan", "Oslo"].includes(p.replace(" (Growth)", "")) ? "eu" : "europe";
+  ACTIONS = liste.map(a => ({ ...a, _t: normaliser(a.ticker), _n: normaliser(a.nom), _zone: zone(a.place), _us: zone(a.place) === "us" }));
   $("nb-total").textContent = ACTIONS.length.toLocaleString("fr-FR");
 });
 
@@ -785,7 +810,7 @@ function score(a, q) {
 
 function chercher(texte) {
   const q = normaliser(texte.trim());
-  const liste = ACTIONS.filter(a => filtre === "tous" || (filtre === "us") === a._us);
+  const liste = ACTIONS.filter(a => filtre === "tous" || a._zone === filtre);
   if (!q) {
     const rang = (a) => { const i = POPULAIRES.indexOf(a.ticker); return i < 0 ? 999 : i; };
     return liste.slice().sort((a, b) => rang(a) - rang(b) || b.liquidite - a.liquidite).slice(0, 60);
@@ -801,26 +826,49 @@ function surligner(texte, q) {
   return echapper(texte.slice(0, i)) + "<mark>" + echapper(texte.slice(i, i + q.length)) + "</mark>" +
          echapper(texte.slice(i + q.length));
 }
-const classeBadge = (a) => a._us ? "us" : (a.place.includes("Growth") ? "growth" : "eu");
+const classeBadge = (a) => a.yahoo ? "yahoo" : a._us ? "us" : (a.place.includes("Growth") ? "growth" : "eu");
 const libelle = (a) => a.nom && a.nom !== a.ticker ? `${a.nom} (${a.ticker})` : a.ticker;
 
 function creerRecherche(n) {
   const bloc = $("bloc" + n), champ = $("champ" + n), boite = bloc.querySelector(".suggestions");
   let resultats = [], actif = -1;
 
+  let minuteurYahoo = null, requeteYahoo = 0;
+  function ligne(a, i, q) {
+    return `<div class="sugg${i === actif ? " actif" : ""}" data-i="${i}" role="option">
+          <span class="tk">${surligner(a.ticker, q)}</span>
+          <span class="nom">${surligner(a.nom, q)}${a.secteur ? `<small>${echapper(a.secteur)}</small>` : ""}${a.type === "ETF" ? "<small>ETF</small>" : ""}</span>
+          <span class="badge ${classeBadge(a)}">${echapper(a.place)}</span>
+        </div>`;
+  }
+  function rendre(q, locaux, yahoo, enCours) {
+    resultats = locaux.concat(yahoo);
+    if (actif >= resultats.length) actif = resultats.length - 1;
+    if (actif < 0 && resultats.length) actif = 0;
+    let h = (q ? "" : `<div class="entete-sugg">Valeurs populaires</div>`) + locaux.map((a, i) => ligne(a, i, q)).join("");
+    if (yahoo.length) h += `<div class="entete-sugg">Sur Yahoo Finance : toutes les places du monde</div>` + yahoo.map((a, i) => ligne(a, locaux.length + i, q)).join("");
+    if (enCours) h += `<div class="vide">Recherche sur Yahoo Finance…</div>`;
+    else if (!resultats.length) h += `<div class="vide">Aucune action trouvée pour « ${echapper(q)} »</div>`;
+    boite.innerHTML = h;
+    boite.classList.add("ouvert");
+  }
   function afficher() {
     const q = champ.value.trim();
-    resultats = chercher(q);
-    actif = resultats.length ? 0 : -1;
-    boite.innerHTML = !resultats.length
-      ? `<div class="vide">Aucune action trouvée pour « ${echapper(q)} »</div>`
-      : (q ? "" : `<div class="entete-sugg">Valeurs populaires</div>`) + resultats.map((a, i) => `
-        <div class="sugg${i === actif ? " actif" : ""}" data-i="${i}" role="option">
-          <span class="tk">${surligner(a.ticker, q)}</span>
-          <span class="nom">${surligner(a.nom, q)}${a.secteur ? `<small>${echapper(a.secteur)}</small>` : ""}</span>
-          <span class="badge ${classeBadge(a)}">${echapper(a.place)}</span>
-        </div>`).join("");
-    boite.classList.add("ouvert");
+    const locaux = chercher(q);
+    actif = locaux.length ? 0 : -1;
+    clearTimeout(minuteurYahoo);
+    // Moins de 8 résultats dans la liste intégrée : on interroge aussi Yahoo Finance
+    const viaYahoo = q.length >= 2 && locaux.length < 8;
+    rendre(q, locaux, [], viaYahoo);
+    if (!viaYahoo) return;
+    const n = ++requeteYahoo;
+    minuteurYahoo = setTimeout(async () => {
+      let yahoo = [];
+      try { yahoo = await (await fetch("/api/recherche?q=" + encodeURIComponent(q))).json(); } catch {}
+      if (n !== requeteYahoo || champ.value.trim() !== q) return;
+      const connus = new Set(locaux.map(a => a.ticker));
+      rendre(q, locaux, yahoo.filter(a => !connus.has(a.ticker)).slice(0, 10), false);
+    }, 320);
   }
   function deplacer(d) {
     if (!resultats.length) return;
@@ -999,7 +1047,7 @@ function afficherRapport(s, titre) {
   nomRapport = s.nom;
   $("export-note").hidden = !(courant && courant.type === "simple");   // la note n'existe que pour une action
   if (window.majRappelJournal) majRappelJournal();
-  $("rapport").src = s.rapport;
+  $("rapport").src = s.rapport;   // le thème est appliqué au chargement (voir appliquerThemeRapport)
   $("rapport").classList.add("ouvert");
   $("outils").classList.add("ouvert");
   $("message-export").textContent = "";

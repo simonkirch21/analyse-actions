@@ -730,3 +730,35 @@ document.addEventListener("keydown", e => {
     e.preventDefault(); e.target.click();
   }
 });
+
+
+// =====================================================================
+// THÈME CLAIR / SOMBRE / AUTOMATIQUE
+// =====================================================================
+const THEMES = { sombre: ["☾", "Thème sombre"], clair: ["☀", "Thème clair"], auto: ["◐", "Thème automatique (suit le Mac)"] };
+function themeEffectif() {
+  const c = localStorage.getItem("theme") || "sombre";
+  return c === "clair" || (c === "auto" && matchMedia("(prefers-color-scheme: light)").matches) ? "light" : "dark";
+}
+function appliquerThemeRapport() {
+  try { const d = $("rapport").contentDocument; if (d && d.documentElement) d.documentElement.dataset.theme = themeEffectif(); } catch {}
+}
+function appliquerTheme() {
+  const c = localStorage.getItem("theme") || "sombre";
+  document.documentElement.dataset.theme = themeEffectif();
+  const [icone, titre] = THEMES[c];
+  $("bouton-theme").innerHTML = `${icone}<span>${c === "auto" ? "Auto" : c === "clair" ? "Clair" : "Sombre"}</span>`;
+  $("bouton-theme").title = titre + " — clique pour changer";
+  appliquerThemeRapport();
+  // Les graphiques dessinés en JavaScript relisent les couleurs du thème
+  if (mode === "graphique" && typeof dessinerGP === "function") dessinerGP();
+  if (mode === "carte" && typeof chargerCarte === "function") chargerCarte();
+}
+$("bouton-theme").addEventListener("click", () => {
+  const ordre = ["sombre", "clair", "auto"], c = localStorage.getItem("theme") || "sombre";
+  localStorage.setItem("theme", ordre[(ordre.indexOf(c) + 1) % 3]);
+  appliquerTheme();
+});
+matchMedia("(prefers-color-scheme: light)").addEventListener("change", () => { if (localStorage.getItem("theme") === "auto") appliquerTheme(); });
+$("rapport").addEventListener("load", appliquerThemeRapport);
+appliquerTheme();
