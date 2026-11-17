@@ -1,0 +1,11 @@
+yfinance
+pandas
+numpy
+matplotlib
+scipy
+flask
+pywebview
+lxml
+requests
+openpyxl
+xhtml2pdf

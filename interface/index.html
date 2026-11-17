@@ -1,0 +1,1729 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#0A0F1C">
+<title>Analyse Actions</title>
+<link rel="stylesheet" href="pro.css">
+<style>
+:root {
+  --fond: #f5f5f7; --carte: #ffffff; --texte: #1d1d1f; --doux: #6e6e73; --bord: #e2e2e7;
+  --accent: #0a66d8; --accent-doux: #e8f0fc; --survol: #f0f4fb; --ombre: 0 8px 30px rgba(0,0,0,.08);
+  --us: #0a66d8; --eu: #1a7f5a; --growth: #b26a00; --rouge: #c0392b; --orange: #e07a10;
+}
+@media (prefers-color-scheme: dark) {
+  :root { --fond: #111113; --carte: #1c1c1f; --texte: #f2f2f4; --doux: #9a9aa2; --bord: #2e2e33;
+          --accent: #4c9bff; --accent-doux: #16263d; --survol: #22283a; --ombre: 0 8px 30px rgba(0,0,0,.5);
+          --us: #6aa8ff; --eu: #49c493; --growth: #f0a33a; --rouge: #ff6b5b; --orange: #f39a3d; }
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; }
+body { background: var(--fond); color: var(--texte); display: flex; flex-direction: column;
+       font: 15px/1.5 -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif; }
+
+/* ---------- En-tête ---------- */
+header { padding: 28px 32px 18px; transition: padding .3s; }
+body.compact header { padding: 14px 32px 12px; border-bottom: 1px solid var(--bord); background: var(--carte); }
+.titre { display: flex; align-items: baseline; gap: 12px; margin-bottom: 18px; }
+body.compact .titre { display: none; }
+.titre h1 { margin: 0; font-size: 30px; letter-spacing: -.02em; }
+.titre span { color: var(--doux); }
+
+.barre { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; max-width: 1200px; }
+.modes { margin-bottom: 12px; }
+
+/* ---------- Recherche ---------- */
+.recherche { position: relative; flex: 1 1 340px; }
+.recherche input {
+  width: 100%; font-size: 17px; padding: 14px 16px 14px 46px; border-radius: 12px;
+  border: 1px solid var(--bord); background: var(--carte); color: var(--texte); outline: none;
+  box-shadow: var(--ombre); transition: border-color .15s, box-shadow .15s;
+}
+.recherche input:focus { border-color: var(--accent); box-shadow: 0 0 0 4px var(--accent-doux); }
+.recherche .pastille-c { position: absolute; left: 18px; top: 50%; transform: translateY(-50%);
+                         width: 12px; height: 12px; border-radius: 99px; background: var(--c); }
+.recherche .loupe { position: absolute; left: 16px; top: 50%; transform: translateY(-50%);
+                    color: var(--doux); pointer-events: none; }
+body.mode-comparer .recherche .loupe { display: none; }
+body:not(.mode-comparer) .recherche .pastille-c { display: none; }
+#bloc2, #vs { display: none; }
+body.mode-comparer #bloc2 { display: block; }
+body.mode-comparer #vs { display: inline; }
+#vs { color: var(--doux); font-weight: 700; }
+.suggestions {
+  position: absolute; top: calc(100% + 6px); left: 0; right: 0; z-index: 10; display: none;
+  background: var(--carte); border: 1px solid var(--bord); border-radius: 12px;
+  box-shadow: var(--ombre); max-height: 420px; overflow-y: auto; padding: 6px; min-width: 420px;
+}
+.suggestions.ouvert { display: block; }
+.sugg { display: grid; grid-template-columns: 96px 1fr auto; gap: 12px; align-items: center;
+        padding: 9px 10px; border-radius: 8px; cursor: pointer; }
+.sugg.actif, .sugg:hover { background: var(--survol); }
+.sugg .tk { font: 600 13px ui-monospace, "SF Mono", Menlo, monospace; color: var(--accent);
+            overflow: hidden; text-overflow: ellipsis; }
+.sugg .nom { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sugg .nom small { color: var(--doux); margin-left: 6px; }
+.sugg mark { background: none; color: inherit; font-weight: 700; }
+.badge { font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 99px; white-space: nowrap;
+         border: 1px solid currentColor; }
+.badge.us { color: var(--us); } .badge.eu { color: var(--eu); } .badge.growth { color: var(--growth); }
+.entete-sugg { padding: 6px 10px 4px; font-size: 12px; color: var(--doux); text-transform: uppercase;
+               letter-spacing: .04em; }
+.vide { padding: 16px; color: var(--doux); text-align: center; }
+
+/* ---------- Contrôles ---------- */
+.segment { display: inline-flex; background: var(--carte); border: 1px solid var(--bord);
+           border-radius: 10px; padding: 3px; }
+.segment button { border: 0; background: none; color: var(--doux); font: inherit; font-size: 14px;
+                  padding: 7px 12px; border-radius: 7px; cursor: pointer; }
+.segment button.on { background: var(--accent); color: #fff; }
+select { font: inherit; font-size: 14px; padding: 9px 12px; border-radius: 10px;
+         border: 1px solid var(--bord); background: var(--carte); color: var(--texte); }
+.bouton { font: inherit; font-size: 14px; font-weight: 600; padding: 10px 16px; border-radius: 10px;
+          border: 0; background: var(--accent); color: #fff; cursor: pointer; }
+.bouton:disabled { opacity: .4; cursor: default; }
+#lancer-comp { display: none; }
+body.mode-comparer #lancer-comp { display: inline-block; }
+
+.recents { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; max-width: 1200px; }
+.recents:empty { display: none; }
+.recents .lbl { color: var(--doux); font-size: 13px; align-self: center; }
+.chip { font-size: 13px; padding: 5px 11px; border-radius: 99px; background: var(--carte);
+        border: 1px solid var(--bord); cursor: pointer; color: var(--texte); }
+.chip:hover { border-color: var(--accent); }
+
+/* ---------- Contenu ---------- */
+main { flex: 1; display: flex; flex-direction: column; min-height: 0; padding: 0 32px 24px; }
+body.compact main { padding: 0; }
+/* ---------- Accueil : tableau de bord ---------- */
+.accueil { flex: 1; overflow-y: auto; padding-bottom: 30px; }
+.accueil > * { max-width: 1240px; }
+.intro { color: var(--doux); font-size: 14px; margin: 4px 0 18px; }
+.intro b { color: var(--texte); }
+.titre-section { display: flex; align-items: baseline; gap: 10px; font-size: 19px; margin: 22px 0 10px; }
+.titre-section small { color: var(--doux); font-size: 12px; font-weight: 400; }
+.carte-a { background: var(--carte); border: 1px solid var(--bord); border-radius: 14px; padding: 16px 18px; }
+.carte-a h3 { margin: 0 0 10px; font-size: 15px; display: flex; justify-content: space-between; align-items: baseline; }
+.carte-a h3 small { color: var(--doux); font-weight: 400; font-size: 12px; }
+.grille-indices { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+.indice { background: var(--carte); border: 1px solid var(--bord); border-radius: 12px; padding: 8px 10px;
+          cursor: pointer; transition: border-color .15s, transform .15s; }
+.indice:hover { border-color: var(--accent); }
+.indice.actif { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-doux); }
+.indice .n { font-size: 12.5px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.indice .z { color: var(--doux); font-size: 11px; font-weight: 400; }
+.indice .val { font-size: 16px; font-weight: 700; margin-top: 1px; }
+.indice .var { font-size: 12px; font-weight: 600; white-space: nowrap; }
+.indice svg { display: block; width: 100%; height: 26px; margin-top: 3px; }
+.hausse { color: var(--eu); } .baisse { color: var(--rouge); }
+.squelette { background: linear-gradient(90deg, var(--bord) 0%, var(--survol) 50%, var(--bord) 100%);
+             background-size: 200% 100%; animation: brille 1.2s infinite; border-radius: 12px; min-height: 86px; }
+@keyframes brille { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+.grand-graphe { margin-top: 12px; }
+.gg-tete { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap; }
+.gg-tete .t { font-size: 18px; font-weight: 700; } .gg-tete .aide { color: var(--doux); font-size: 13px; max-width: 720px; }
+.gg-tete .chiffres { font-size: 13px; color: var(--doux); margin-top: 4px; }
+.periodes button { font-size: 13px; padding: 5px 10px; }
+#svg-gg { width: 100%; height: 300px; display: block; margin-top: 8px; touch-action: none; }
+#svg-gg text { fill: var(--doux); font-size: 11px; }
+#svg-gg .grille { stroke: var(--bord); stroke-width: 1; }
+#svg-gg .ligne { fill: none; stroke-width: 2; }
+#svg-gg .curseur { stroke: var(--doux); stroke-dasharray: 3 3; }
+#svg-gg .bulle rect { fill: var(--carte); stroke: var(--bord); }
+#svg-gg .bulle text { fill: var(--texte); font-size: 12px; }
+.colonnes-a { display: grid; grid-template-columns: 1.1fr 1fr; gap: 14px; margin-top: 14px; }
+.trois-a { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 14px; }
+@media (max-width: 1000px) { .colonnes-a, .trois-a { grid-template-columns: 1fr; } }
+.t-a { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+.t-a td { padding: 6px 4px; border-bottom: 1px solid var(--bord); white-space: nowrap; }
+.t-a tr:last-child td { border-bottom: 0; }
+.t-a tr.cliquable { cursor: pointer; } .t-a tr.cliquable:hover td { background: var(--survol); }
+.t-a .tk { font: 600 12px ui-monospace, Menlo, monospace; color: var(--accent); }
+.t-a .nm { overflow: hidden; text-overflow: ellipsis; max-width: 190px; }
+.t-a .num { text-align: right; } .t-a svg { width: 70px; height: 22px; display: block; }
+.plus { border: 1px solid var(--bord); background: var(--fond); color: var(--accent); border-radius: 6px;
+        width: 22px; height: 22px; line-height: 18px; padding: 0; cursor: pointer; font-weight: 700; }
+.plus:hover { border-color: var(--accent); } .plus.fait { color: var(--eu); }
+.actus { list-style: none; margin: 0; padding: 0; max-height: 470px; overflow-y: auto; }
+.actus li { padding: 8px 0; border-bottom: 1px solid var(--bord); }
+.actus li:last-child { border-bottom: 0; }
+.actus a { color: var(--texte); text-decoration: none; font-size: 14px; line-height: 1.35; }
+.actus a:hover { color: var(--accent); }
+.actus .meta { color: var(--doux); font-size: 12px; margin-top: 2px; }
+.note-a { color: var(--doux); font-size: 12px; margin: 8px 0 0; }
+#bouton-accueil { display: none; }
+body.compact #bouton-accueil { display: inline-block; }
+
+.chargement { display: none; flex: 1; align-items: center; justify-content: center; }
+.chargement.ouvert { display: flex; }
+.boite { background: var(--carte); border: 1px solid var(--bord); border-radius: 16px; padding: 28px 32px;
+         width: min(520px, 100%); box-shadow: var(--ombre); }
+.boite h2 { margin: 0 0 4px; font-size: 20px; }
+.boite .sous { color: var(--doux); margin-bottom: 18px; }
+.progres { height: 6px; background: var(--bord); border-radius: 99px; overflow: hidden; }
+.progres div { height: 100%; width: 0; background: var(--accent); transition: width .5s; }
+.etape { margin-top: 12px; color: var(--doux); font-size: 14px; }
+.erreur { color: var(--rouge); }
+
+iframe { flex: 1; width: 100%; border: 0; display: none; background: var(--fond); }
+iframe.ouvert { display: block; }
+.outils { display: none; gap: 10px; align-items: center; padding: 8px 32px; font-size: 13px;
+          color: var(--doux); border-bottom: 1px solid var(--bord); background: var(--carte); }
+.outils.ouvert { display: flex; }
+.outils button { font: inherit; font-size: 13px; padding: 5px 10px; border-radius: 8px; cursor: pointer;
+                 border: 1px solid var(--bord); background: var(--fond); color: var(--texte); }
+.outils button:disabled { opacity: .5; cursor: progress; }
+#message-export { color: var(--eu); }
+#ajout-pf { border-color: var(--accent) !important; color: var(--accent) !important; font-weight: 600; }
+#retour-pf { display: none; }
+body.vue-pf #retour-pf { display: inline-block; }
+body.vue-pf #ajout-pf { display: none; }
+.compteur { display: inline-block; min-width: 18px; padding: 0 6px; margin-left: 6px; border-radius: 99px;
+            background: var(--accent-doux); color: var(--accent); font-size: 12px; font-weight: 700; }
+.segment button.on .compteur { background: rgba(255,255,255,.25); color: #fff; }
+body.mode-portefeuille #filtre, body.mode-portefeuille #vs, body.mode-portefeuille #bloc2 { }
+.panneau-pf { display: none; max-width: 1000px; margin-top: 10px; }
+.panneau-pf.ouvert { display: block; }
+.panneau-pf .carte { background: var(--carte); border: 1px solid var(--bord); border-radius: 14px; padding: 18px; }
+.panneau-pf h2 { margin: 0 0 4px; font-size: 20px; }
+.panneau-pf .aide { color: var(--doux); font-size: 14px; margin: 0 0 14px; }
+.t-pf { width: 100%; border-collapse: collapse; font-size: 14px; }
+.t-pf th { text-align: left; color: var(--doux); font-weight: 500; padding: 6px 8px; border-bottom: 1px solid var(--bord); }
+.t-pf td { padding: 7px 8px; border-bottom: 1px solid var(--bord); }
+.t-pf td.tk { font: 600 13px ui-monospace, Menlo, monospace; color: var(--accent); }
+.t-pf input { width: 110px; font: inherit; padding: 5px 8px; border-radius: 8px; border: 1px solid var(--bord);
+              background: var(--fond); color: var(--texte); text-align: right; }
+.t-pf .suppr { border: 0; background: none; color: var(--doux); font-size: 18px; cursor: pointer; }
+.t-pf .suppr:hover { color: var(--rouge); }
+.t-pf tfoot td { font-weight: 700; border-bottom: 0; }
+.pf-actions { display: flex; gap: 10px; align-items: center; margin-top: 16px; flex-wrap: wrap; }
+.bouton.secondaire { background: var(--carte); color: var(--accent); border: 1px solid var(--accent); }
+.bouton.secondaire:disabled { opacity: .4; }
+.t-pf tr.rf td.tk { color: var(--doux); }
+.pf-actions .lien { border: 0; background: none; color: var(--doux); cursor: pointer; font: inherit; font-size: 13px; }
+.pf-vide { color: var(--doux); padding: 18px 0; text-align: center; }
+.panneau-pf .grille-2 { display: grid; grid-template-columns: 1.3fr 1fr; gap: 14px; margin-top: 14px; }
+@media (max-width: 1000px) { .panneau-pf .grille-2 { grid-template-columns: 1fr; } }
+.panneau-pf h3 { margin: 0 0 8px; font-size: 15px; }
+.t-pf input.court { width: 80px; } .t-pf input[type=date] { width: 140px; text-align: left; }
+.champs { display: flex; gap: 14px; flex-wrap: wrap; align-items: flex-end; margin: 10px 0; }
+.champs label { display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: var(--doux); }
+.champs input, .champs select { font: inherit; font-size: 14px; padding: 8px 10px; border-radius: 8px;
+  border: 1px solid var(--bord); background: var(--fond); color: var(--texte); min-width: 120px; }
+.kpis-s { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; margin: 14px 0; }
+.kpis-s div { background: var(--fond); border: 1px solid var(--bord); border-radius: 10px; padding: 10px 12px; }
+.kpis-s .l { color: var(--doux); font-size: 11px; text-transform: uppercase; letter-spacing: .03em; }
+.kpis-s .v { font-size: 20px; font-weight: 700; }
+.legende { display: flex; gap: 14px; flex-wrap: wrap; font-size: 13px; margin-top: 6px; }
+.legende span::before { content: ""; display: inline-block; width: 14px; height: 3px; margin-right: 6px;
+  vertical-align: middle; background: var(--c); border-radius: 2px; }
+.svg-courbes { width: 100%; height: 300px; display: block; margin-top: 6px; }
+.svg-courbes text { fill: var(--doux); font-size: 11px; } .svg-courbes .grille { stroke: var(--bord); }
+.svg-courbes .bulle rect { fill: var(--carte); stroke: var(--bord); } .svg-courbes .bulle text { fill: var(--texte); font-size: 12px; }
+.lecture-s { background: var(--accent-doux); border-radius: 10px; padding: 12px 14px; font-size: 14px; line-height: 1.5; }
+.lecture-s p { margin: 4px 0; }
+.presets { display: flex; gap: 8px; flex-wrap: wrap; margin: 8px 0; }
+.presets button { font: inherit; font-size: 13px; padding: 5px 11px; border-radius: 99px; cursor: pointer;
+  border: 1px solid var(--bord); background: var(--fond); color: var(--texte); }
+.presets button:hover, .presets button.on { border-color: var(--accent); color: var(--accent); }
+.t-filtre th { cursor: pointer; white-space: nowrap; } .t-filtre th:hover { color: var(--accent); }
+.t-filtre td.num, .t-filtre th.num { text-align: right; }
+.t-filtre td { padding: 6px 6px; } .t-filtre tr.cliquable { cursor: pointer; }
+.t-filtre tr.cliquable:hover td { background: var(--survol); }
+.agenda { list-style: none; margin: 0; padding: 0; }
+.agenda li { display: grid; grid-template-columns: 92px 1fr; gap: 10px; padding: 7px 0; border-bottom: 1px solid var(--bord); font-size: 14px; }
+.agenda .d { font-weight: 700; color: var(--accent); } .agenda .t { color: var(--doux); font-size: 12px; }
+#ajout-suivi { color: var(--growth) !important; }
+.lien { border: 0; background: none; color: var(--accent); cursor: pointer; font: inherit; font-size: 13px; padding: 0; }
+.onglets { display: flex; gap: 6px; flex-wrap: wrap; margin: 6px 0 12px; }
+.onglets button { font: inherit; font-size: 14px; padding: 7px 14px; border-radius: 99px; cursor: pointer;
+  border: 1px solid var(--bord); background: var(--fond); color: var(--texte); }
+.onglets button.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+.cartes-macro { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin: 10px 0; }
+.cartes-macro div { background: var(--fond); border: 1px solid var(--bord); border-left: 4px solid var(--c); border-radius: 10px; padding: 10px 12px; }
+.cartes-macro .l { font-size: 13px; color: var(--doux); } .cartes-macro .v { font-size: 22px; font-weight: 700; }
+.cartes-macro .s { font-size: 12px; color: var(--doux); }
+.fictifs-tete { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
+.ordre { background: var(--fond); border: 1px solid var(--bord); border-radius: 12px; padding: 12px 14px; margin: 12px 0; }
+.ordre .sens button { font-weight: 600; }
+.ordre .sens button.achat.on { background: var(--eu); } .ordre .sens button.vente.on { background: var(--rouge); }
+#fx-apercu { font-size: 14px; } #fx-message.ok { color: var(--eu); } #fx-message.err { color: var(--rouge); }
+.t-pf tr.cliquable { cursor: pointer; } .t-pf tr.cliquable:hover td { background: var(--survol); }
+body.vue-pf #ajout-suivi { display: none; }
+
+/* =====================================================================
+   THÈME « SALLE DES MARCHÉS »
+   Encre marine et papier ivoire (presse financière), or pour l'accent,
+   émeraude pour la hausse, corail pour la baisse.
+   Typo : titres à empattements (New York), texte SF, chiffres alignés (tabulaires).
+   Mouvements : courts (150-260 ms), courbe « ease-out » marquée, désactivés si
+   l'utilisateur a choisi « Réduire les animations » dans les réglages du Mac.
+   ===================================================================== */
+:root {
+  --fond: #0A0F1C; --carte: #10182A; --texte: #ECE8DF; --doux: #8D94A5; --bord: #1E2940;
+  --accent: #D4AF6A; --accent-doux: rgba(212,175,106,.13); --survol: #162038; --sur-accent: #0A0F1C;
+  --or: #D4AF6A; --or-doux: rgba(212,175,106,.12);
+  --eu: #3BC48F; --rouge: #FF6B5A; --orange: #F2A65A; --us: #8DB6FF; --growth: #E9B866;
+  --ombre: 0 1px 2px rgba(0,0,0,.4), 0 10px 30px rgba(0,0,0,.35);
+  color-scheme: dark;
+  --serif: "New York", ui-serif, "Iowan Old Style", Georgia, serif;
+  --mono: ui-monospace, "SF Mono", Menlo, monospace;
+  --ease: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-io: cubic-bezier(0.77, 0, 0.175, 1);
+  --rapide: 160ms; --normal: 240ms;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --fond: #0A0F1C; --carte: #10182A; --texte: #ECE8DF; --doux: #8D94A5; --bord: #1E2940;
+    --accent: #D4AF6A; --accent-doux: rgba(212,175,106,.13); --survol: #162038; --sur-accent: #0A0F1C;
+    --or: #D4AF6A; --or-doux: rgba(212,175,106,.12);
+    --eu: #3BC48F; --rouge: #FF6B5A; --orange: #F2A65A; --us: #8DB6FF; --growth: #E9B866;
+    --ombre: 0 1px 2px rgba(0,0,0,.4), 0 10px 30px rgba(0,0,0,.35);
+  }
+}
+
+body { font-variant-numeric: tabular-nums; -webkit-font-smoothing: antialiased; letter-spacing: -0.003em; }
+h1, h2, h3, .titre-section, .gg-tete .t, .boite h2 { font-family: var(--serif); font-weight: 600; letter-spacing: -0.01em; }
+.titre { align-items: center; }
+.titre h1 { font-size: 32px; display: flex; align-items: center; gap: 12px; }
+.titre .logo { width: 34px; height: 34px; flex: none; }
+.titre span { font-size: 13px; text-transform: uppercase; letter-spacing: .14em; color: var(--or); font-weight: 600; }
+header { position: relative; }
+body:not(.compact) header::after { content: ""; position: absolute; left: 32px; right: 32px; bottom: 0; height: 1px;
+  background: linear-gradient(90deg, var(--or) 0, var(--or) 64px, var(--bord) 64px); }
+body.compact header { background: color-mix(in srgb, var(--carte) 88%, transparent); backdrop-filter: saturate(1.4) blur(12px); }
+
+/* Étiquettes en petites capitales, chiffres en police à chasse fixe */
+.kpis-s .l, .cartes-macro .l, .indice .z, .entete-sugg, .carte-a h3 small, .titre-section small {
+  text-transform: uppercase; letter-spacing: .07em; font-size: 11px; font-weight: 600; }
+.indice .val, .kpis-s .v, .cartes-macro .v, .t-a .num, .t-pf td, .gg-tete .chiffres b { font-family: var(--mono); letter-spacing: -0.02em; }
+.indice .val { font-size: 17px; font-weight: 600; }
+.indice .var { overflow: hidden; text-overflow: ellipsis; }
+.indice .var .z { text-transform: none; letter-spacing: 0; font-weight: 400; font-size: 11px; }
+.kpis-s .v, .cartes-macro .v { font-weight: 600; }
+.tk, .sugg .tk, .t-a .tk, .t-pf td.tk { color: var(--accent); }
+.hausse, .t-a .hausse { color: var(--eu); } .baisse { color: var(--rouge); }
+
+/* Cartes, boutons et commandes */
+.carte-a, .panneau-pf .carte, .indice, .boite, .suggestions { border-radius: 14px; box-shadow: var(--ombre); }
+.carte-a h3 { font-family: var(--serif); font-size: 16px; }
+.bouton { background: var(--accent); color: var(--sur-accent); border-radius: 10px; letter-spacing: .01em;
+  transition: transform var(--rapide) var(--ease), filter var(--rapide) var(--ease), opacity var(--rapide); }
+.bouton:hover:not(:disabled) { filter: brightness(1.08); }
+.bouton.secondaire { background: transparent; color: var(--accent); border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent); }
+.segment { border-radius: 11px; background: var(--carte); box-shadow: var(--ombre); }
+.segment button { border-radius: 8px; transition: background var(--rapide) var(--ease), color var(--rapide) var(--ease), transform var(--rapide) var(--ease); }
+.segment button.on, .onglets button.on, .presets button.on { background: var(--accent); color: var(--sur-accent); }
+.segment button.on .compteur { background: color-mix(in srgb, var(--sur-accent) 22%, transparent); color: var(--sur-accent); }
+.compteur { background: var(--or-doux); color: var(--or); }
+button:active:not(:disabled), .chip:active, .indice:active { transform: scale(0.97); }
+.recherche input { border-radius: 12px; transition: border-color var(--rapide) var(--ease), box-shadow var(--normal) var(--ease); }
+.recherche input:focus { border-color: var(--or); box-shadow: 0 0 0 4px var(--or-doux), var(--ombre); }
+.indice { transition: transform var(--normal) var(--ease), box-shadow var(--normal) var(--ease), border-color var(--rapide); }
+.indice:hover { transform: translateY(-2px); border-color: color-mix(in srgb, var(--or) 60%, var(--bord)); }
+.indice.actif { border-color: var(--or); box-shadow: 0 0 0 3px var(--or-doux), var(--ombre); }
+.chip { transition: border-color var(--rapide) var(--ease), transform var(--rapide) var(--ease); }
+.chip:hover { border-color: var(--or); }
+.t-a tr.cliquable td, .t-pf tr td { transition: background var(--rapide) var(--ease); }
+.progres div { background: linear-gradient(90deg, var(--accent), var(--or)); transition: width .6s var(--ease); }
+.lecture-s { background: var(--or-doux); border-left: 3px solid var(--or); }
+.cartes-macro div { border-left-width: 3px; }
+::selection { background: var(--or-doux); }
+
+/* Bandeau défilant des marchés (accueil) */
+.bandeau { position: relative; overflow: hidden; border-block: 1px solid var(--bord); margin: 4px 0 6px;
+  mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent);
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent); }
+.bandeau .defile { display: flex; width: max-content; gap: 34px; padding: 9px 0; animation: defile 70s linear infinite; }
+.bandeau:hover .defile { animation-play-state: paused; }
+.bandeau .item { font-size: 13px; white-space: nowrap; display: inline-flex; gap: 8px; align-items: baseline; cursor: pointer; }
+.bandeau .item b { font-weight: 600; } .bandeau .item span { font-family: var(--mono); }
+@keyframes defile { to { transform: translateX(-50%); } }
+
+/* Entrées en douceur */
+@keyframes entree { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+@keyframes apparait { from { opacity: 0; transform: translateY(-4px) scale(.985); } to { opacity: 1; transform: none; } }
+.suggestions.ouvert { animation: apparait var(--rapide) var(--ease); transform-origin: top center; }
+.panneau-pf.ouvert, .chargement.ouvert .boite, iframe.ouvert, .outils.ouvert { animation: entree var(--normal) var(--ease); }
+.accueil > * { animation: entree 420ms var(--ease) both; }
+.accueil > :nth-child(2) { animation-delay: 40ms; } .accueil > :nth-child(3) { animation-delay: 80ms; }
+.accueil > :nth-child(4) { animation-delay: 120ms; } .accueil > :nth-child(5) { animation-delay: 160ms; }
+.accueil > :nth-child(n+6) { animation-delay: 200ms; }
+.grille-indices .indice { animation: entree 360ms var(--ease) both; }
+.grille-indices .indice:nth-child(2) { animation-delay: 25ms; } .grille-indices .indice:nth-child(3) { animation-delay: 50ms; }
+.grille-indices .indice:nth-child(4) { animation-delay: 75ms; } .grille-indices .indice:nth-child(5) { animation-delay: 100ms; }
+.grille-indices .indice:nth-child(6) { animation-delay: 125ms; } .grille-indices .indice:nth-child(7) { animation-delay: 150ms; }
+.grille-indices .indice:nth-child(n+8) { animation-delay: 175ms; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 1ms !important; animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important; animation-delay: 0ms !important; }
+  .bandeau .defile { animation: none; }
+  .bandeau { overflow-x: auto; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="titre"><h1><svg class="logo" viewBox="0 0 34 34" aria-hidden="true">
+      <rect x="1" y="1" width="32" height="32" rx="8" fill="var(--accent)"/>
+      <path d="M7 23l6-6 4 4 9-10" fill="none" stroke="var(--sur-accent)" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+      <circle cx="26" cy="11" r="2.6" fill="var(--or)"/></svg>Analyse Actions</h1><span>Euronext · S&amp;P 500 · Économie</span></div>
+  <div class="modes">
+    <div id="mode" class="modes-groupes">
+      <div class="segment" aria-label="Marchés">
+        <button data-m="simple" class="on">Analyser</button>
+        <button data-m="comparer">Comparer</button>
+        <button data-m="graphique">Graphique</button>
+        <button data-m="carte">Carte du marché</button>
+        <button data-m="marches">Devises &amp; matières</button>
+        <button data-m="macro">Économie</button>
+        <button data-m="options">Options</button>
+      </div>
+      <div class="segment" aria-label="Mes outils">
+        <button data-m="portefeuille">Portefeuille<span class="compteur" id="nb-pf">0</span></button>
+        <button data-m="suivi">Suivi<span class="compteur" id="nb-suivi">0</span></button>
+        <button data-m="fictifs">Bourse fictive</button>
+        <button data-m="simulateur">Simulateur</button>
+        <button data-m="screener">Filtre</button>
+      </div>
+    </div>
+  </div>
+  <div class="barre">
+    <button class="bouton secondaire" id="bouton-accueil" title="Revenir au tableau de bord des marchés">⌂ Accueil</button>
+    <div class="recherche" id="bloc1" style="--c: var(--accent)">
+      <svg class="loupe" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+           stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>
+      <span class="pastille-c"></span>
+      <input id="champ1" type="text" autocomplete="off" spellcheck="false"
+             placeholder="Rechercher une action : nom ou ticker (LVMH, Apple, ASML…)">
+      <div class="suggestions" role="listbox"></div>
+    </div>
+    <span id="vs">vs</span>
+    <div class="recherche" id="bloc2" style="--c: var(--orange)">
+      <span class="pastille-c"></span>
+      <input id="champ2" type="text" autocomplete="off" spellcheck="false"
+             placeholder="Deuxième action (un concurrent du même secteur)">
+      <div class="suggestions" role="listbox"></div>
+    </div>
+    <div class="segment" id="filtre">
+      <button data-f="tous" class="on">Tous</button>
+      <button data-f="eu">Euronext</button>
+      <button data-f="us">S&amp;P 500</button>
+    </div>
+    <select id="periode" title="Période analysée">
+      <option value="1y">1 an</option><option value="2y">2 ans</option>
+      <option value="5y" selected>5 ans</option><option value="10y">10 ans</option>
+      <option value="max">Max</option>
+    </select>
+    <button class="bouton" id="lancer-comp" disabled>Comparer</button>
+    <button class="bouton-cmd" id="ouvrir-cmd" title="Barre de commandes : tape une action ou une commande">⌘K <span>Commandes</span></button>
+  </div>
+  <div class="recents" id="recents"></div>
+</header>
+
+<div class="outils" id="outils">
+  <span id="titre-rapport"></span>
+  <span id="message-export" role="status" aria-live="polite"></span>
+  <span style="flex:1"></span>
+  <button id="voir-graphique" title="Graphique interactif : bougies, volumes, indicateurs">📈 Graphique</button>
+  <button id="ajout-pf" title="Ajouter cette action à ton portefeuille">+ Portefeuille</button>
+  <button id="ajout-suivi" title="Surveiller cette action (alertes, agenda des résultats et dividendes)">☆ Suivre</button>
+  <button id="retour-pf" title="Revenir à la liste des actions du portefeuille">Modifier le portefeuille</button>
+  <button id="export-pdf" title="Enregistrer le rapport en PDF">PDF</button>
+  <button id="export-xlsx" title="Enregistrer tous les chiffres dans un classeur Excel">Excel</button>
+  <button id="actualiser" title="Recalculer avec les données les plus récentes">Actualiser</button>
+</div>
+
+<main>
+  <section class="accueil" id="accueil">
+    <p class="intro"><b id="nb-total">…</b> actions (Euronext et S&amp;P 500) · 8 parties d'analyse ·
+      comparaison de deux entreprises · portefeuille et Markowitz · exports PDF et Excel.
+      Tape un nom dans la barre de recherche, ou clique sur une action ci-dessous.</p>
+
+    <div class="bandeau" id="bandeau" aria-label="Cours des marchés"><div class="defile" id="defile"></div></div>
+    <div class="titre-section">Les marchés <small id="maj-indices"></small></div>
+    <div class="grille-indices" id="indices">
+      <div class="squelette"></div><div class="squelette"></div><div class="squelette"></div>
+      <div class="squelette"></div><div class="squelette"></div><div class="squelette"></div>
+    </div>
+    <div class="carte-a grand-graphe">
+      <div class="gg-tete">
+        <div><div class="t" id="gg-titre">Chargement…</div><div class="aide" id="gg-aide"></div>
+          <div class="chiffres" id="gg-chiffres"></div></div>
+        <div class="segment periodes" id="gg-periodes">
+          <button data-p="1m">1 mois</button><button data-p="6m">6 mois</button>
+          <button data-p="1y" class="on">1 an</button><button data-p="5y">5 ans</button>
+          <button data-p="10y">10 ans</button><button data-p="max">Tout</button>
+        </div>
+      </div>
+      <svg id="svg-gg" viewBox="0 0 1000 300" preserveAspectRatio="none"></svg>
+    </div>
+
+    <div class="colonnes-a">
+      <div class="carte-a"><h3>Valeurs phares <small>les plus grandes capitalisations suivies</small></h3>
+        <table class="t-a" id="phares"><tr><td>Chargement…</td></tr></table></div>
+      <div class="carte-a"><h3>Actualité économique <small>Le Monde, France 24, La Tribune, Investing</small></h3>
+        <ul class="actus" id="actus"><li>Chargement…</li></ul></div>
+    </div>
+
+    <div class="trois-a">
+      <div class="carte-a"><h3>Plus fortes hausses <small>dernière séance</small></h3>
+        <table class="t-a" id="hausses"><tr><td>Chargement…</td></tr></table></div>
+      <div class="carte-a"><h3>Plus fortes baisses <small>dernière séance</small></h3>
+        <table class="t-a" id="baisses"><tr><td>Chargement…</td></tr></table></div>
+      <div class="carte-a"><h3>Les plus volatiles <small>3 derniers mois</small></h3>
+        <table class="t-a" id="volatiles"><tr><td>Chargement…</td></tr></table>
+        <p class="note-a">Volatilité annualisée : une action à 80 % varie en moyenne de ±5 % par jour.
+          Le marché dans son ensemble est autour de 15 à 20 %.</p></div>
+    </div>
+    <p class="note-a" id="note-univers"></p>
+  </section>
+
+  <section class="panneau-pf" id="panneau-pf">
+    <div class="carte">
+      <h2>Mon portefeuille</h2>
+      <p class="aide">Ajoute des actions avec la barre de recherche ci-dessus, ou avec le bouton
+        « + Portefeuille » d'un rapport. Indique le montant investi dans chacune (en euros), puis lance l'analyse :
+        diversification, corrélations, risque et frontière efficiente de Markowitz. Indique la <b>date d'achat</b>
+        (et si tu veux le prix payé) pour obtenir le suivi réel : plus-values, dividendes reçus et impôt estimé. Tu peux aussi ajouter un
+        <b>placement sans risque</b> (livret, fonds monétaire), rémunéré 3 % par an sans aucune variation.</p>
+      <div id="liste-pf"></div>
+      <div class="pf-actions">
+        <button class="bouton" id="lancer-pf">Analyser le portefeuille</button>
+        <button class="bouton secondaire" id="ajout-rf" title="Livret, fonds monétaire : rémunéré au taux sans risque, sans aucune variation">+ Placement sans risque (3 %)</button>
+        <button class="lien" id="egaliser-pf" title="Mettre le même montant sur chaque action">Répartir à parts égales</button>
+        <button class="lien" id="vider-pf">Vider le portefeuille</button>
+        <label class="lien" title="Pour l'estimation des impôts dans le suivi réel">Compte :
+          <select id="enveloppe"><option value="CTO">Compte-titres (CTO)</option><option value="PEA">PEA</option></select></label>
+      </div>
+    </div>
+  </section>
+
+  <section class="panneau-pf" id="panneau-suivi">
+    <div class="carte">
+      <h2>Liste de suivi et agenda</h2>
+      <p class="aide">Les actions que tu surveilles sans forcément les détenir. Ajoute-les avec la recherche ou le
+        bouton « ☆ Suivre » d'un rapport. Tant que l'application est ouverte, elle vérifie toutes les 15 minutes tes
+        alertes et t'envoie une <b>notification</b> : baisse du jour supérieure au seuil, cours sous le plancher ou
+        au-dessus du plafond.</p>
+      <div id="liste-suivi"></div>
+      <div class="grille-2">
+        <div><h3>Agenda <span class="note-a">(résultats et dividendes du suivi et du portefeuille)</span></h3>
+          <ul class="agenda" id="agenda"><li>Chargement…</li></ul>
+          <p class="note-a">Détachement du dividende : il faut détenir l'action la veille pour toucher le dividende ;
+            le cours baisse en général du montant versé ce jour-là.</p></div>
+        <div><h3>Dernières alertes</h3><ul class="agenda" id="alertes"><li>Aucune alerte.</li></ul></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="panneau-pf" id="panneau-sim">
+    <div class="carte">
+      <h2>Simulateur d'investissement mensuel</h2>
+      <p class="aide">« Et si j'avais investi un peu chaque mois ? » Choisis un actif (ci-dessous, ou n'importe quelle
+        action avec la barre de recherche), un montant de départ, un versement mensuel et une date : le simulateur
+        rejoue le passé, en euros. C'est l'<b>investissement programmé</b> : on achète tous les mois, que le marché
+        monte ou baisse.</p>
+      <div class="presets" id="sim-presets"></div>
+      <div class="champs">
+        <label>Actif choisi<input id="sim-actif" readonly value="CAC 40 (^FCHI)"></label>
+        <label>Au départ (€)<input id="sim-initial" type="number" min="0" step="100" value="1000"></label>
+        <label>Chaque mois (€)<input id="sim-mensuel" type="number" min="0" step="10" value="100"></label>
+        <label>À partir de<input id="sim-debut" type="month" value="2015-01"></label>
+        <button class="bouton" id="sim-lancer">Simuler</button>
+      </div>
+      <p class="note-a" id="sim-note"></p>
+      <div id="sim-resultat"></div>
+    </div>
+  </section>
+
+  <section class="panneau-pf" id="panneau-screener">
+    <div class="carte">
+      <h2>Filtre d'actions</h2>
+      <p class="aide">Trouve les entreprises qui correspondent à tes critères, avec les ratios vus en cours. Choisis un
+        profil prêt à l'emploi ou règle chaque critère (laisse vide pour ne pas filtrer). Clique sur une ligne pour
+        l'analyser, coche deux lignes pour les comparer.</p>
+      <div class="presets" id="sc-profils">
+        <button data-p="tous">Tout afficher</button>
+        <button data-p="rendement" title="Dividende élevé et dette maîtrisée">Rendement (dividendes)</button>
+        <button data-p="valeur" title="Actions peu chères par rapport à leurs bénéfices">Valeur (pas chères)</button>
+        <button data-p="qualite" title="Rentables et peu endettées">Qualité</button>
+        <button data-p="croissance" title="Chiffre d'affaires en forte hausse">Croissance</button>
+      </div>
+      <div class="champs" id="sc-champs">
+        <label>Marché<select id="sc-marche"><option value="">Tous</option><option value="eu">Euronext</option>
+          <option value="Paris">Paris</option><option value="us">S&amp;P 500</option></select></label>
+        <label>Secteur<select id="sc-secteur"><option value="">Tous</option></select></label>
+        <label title="Capitalisation boursière minimale">Capi. min (Md €)<input data-c="capi_min" type="number" min="0" step="1"></label>
+        <label title="Prix / bénéfice : plus il est bas, moins l'action est chère">PER max<input data-c="per_max" type="number" min="0" step="1"></label>
+        <label title="Dividende annuel / cours">Rendement min (%)<input data-c="rdt_min" type="number" min="0" step="0.5"></label>
+        <label title="Rentabilité des capitaux propres">ROE min (%)<input data-c="roe_min" type="number" step="1"></label>
+        <label title="Bénéfice net / chiffre d'affaires">Marge nette min (%)<input data-c="marge_min" type="number" step="1"></label>
+        <label title="Dette nette / EBE : la norme du cours est 3 au maximum">Levier max<input data-c="levier_max" type="number" step="0.5"></label>
+        <label title="Croissance du chiffre d'affaires sur un an">Croissance CA min (%)<input data-c="croiss_min" type="number" step="1"></label>
+      </div>
+      <div class="pf-actions"><span id="sc-compte" class="note-a"></span><span style="flex:1"></span>
+        <button class="bouton" id="sc-comparer" disabled>Comparer la sélection</button></div>
+      <div id="sc-resultats" style="overflow-x:auto"></div>
+      <p class="note-a">Source : Yahoo Finance (derniers ratios publiés, mis à jour une fois par jour). PER négatif ou
+        absent = entreprise en perte. Les banques et assurances n'ont pas de levier DFN/EBE significatif.</p>
+    </div>
+  </section>
+
+  <section class="panneau-pf" id="panneau-macro">
+    <div class="carte">
+      <h2>L'économie en un coup d'œil</h2>
+      <p class="aide">Les grands indicateurs qui font bouger les marchés, avec leur historique. Source : séries officielles
+        (Eurostat, BCE, Fed, OCDE) publiées par la Banque fédérale de réserve de Saint-Louis (FRED).</p>
+      <div class="onglets" id="macro-onglets"></div>
+      <div id="macro-contenu"><p class="note-a">Chargement des données…</p></div>
+    </div>
+  </section>
+
+  <section class="panneau-pf" id="panneau-fictifs">
+    <div class="carte">
+      <h2>Bourse fictive</h2>
+      <p class="aide">Entraîne-toi sans risquer d'argent : crée un portefeuille avec un capital virtuel, achète et vends
+        des actions au cours réel de la Bourse, puis suis son évolution jour après jour face au CAC 40 et au marché
+        mondial. Frais de courtage et dividendes sont pris en compte. Pour <b>tester une stratégie sur le passé</b>,
+        démarre le portefeuille à une date ancienne : les ordres s'exécutent alors au cours de clôture de la date choisie.</p>
+      <div id="fx-liste"></div>
+      <details class="ordre" id="fx-creation"><summary><b>+ Créer un portefeuille fictif</b></summary>
+        <div class="champs">
+          <label>Nom<input id="fx-nom" value="Mon portefeuille fictif" maxlength="60"></label>
+          <label>Capital de départ (€)<input id="fx-capital" type="number" min="100" step="1000" value="10000"></label>
+          <label title="Laisse aujourd'hui pour suivre le marché en direct, ou choisis une date passée pour tester">Date de départ<input id="fx-date" type="date"></label>
+          <label title="Frais de courtage par ordre">Frais (%)<input id="fx-frais" type="number" min="0" step="0.05" value="0.1"></label>
+          <button class="bouton" id="fx-creer">Créer</button>
+        </div>
+      </details>
+      <div id="fx-detail"></div>
+    </div>
+  </section>
+
+  <section class="panneau-pf" id="panneau-graphique">
+    <div class="carte">
+      <div class="fictifs-tete">
+        <div><h2 id="gp-titre" style="margin:0">Graphique interactif</h2><div class="note-a" id="gp-sous">Choisis une action avec la barre de recherche (ou ⌘K puis « G LVMH »).</div></div>
+        <div class="segment" id="gp-periodes">
+          <button data-p="1mo">1M</button><button data-p="3mo">3M</button><button data-p="6mo">6M</button>
+          <button data-p="1y" class="on">1A</button><button data-p="2y">2A</button><button data-p="5y">5A</button>
+          <button data-p="10y">10A</button><button data-p="max">Max</button></div>
+      </div>
+      <div class="gp-outils">
+        <div class="segment" id="gp-type"><button data-t="bougies" class="on">Bougies</button><button data-t="ligne">Ligne</button><button data-t="zone">Zone</button></div>
+        <div class="presets" id="gp-indic">
+          <button data-i="mm20">MM 20</button><button data-i="mm50" class="on">MM 50</button><button data-i="mm200" class="on">MM 200</button>
+          <button data-i="bollinger">Bollinger</button><button data-i="rsi">RSI</button><button data-i="volume" class="on">Volumes</button></div>
+        <label class="gp-comp">Comparer avec <input id="gp-comparer" placeholder="ticker, ex. KER.PA" size="12"></label>
+        <span class="note-a" id="gp-comp-liste"></span>
+      </div>
+      <div class="gp-zone"><canvas id="gp-canvas"></canvas><div class="gp-info" id="gp-info"></div></div>
+      <p class="note-a">Molette ou pincement : zoomer · glisser : se déplacer dans le temps · double-clic : tout afficher.
+        Bougie verte : le cours a monté dans la séance (clôture au-dessus de l'ouverture) ; rouge : il a baissé ; les traits fins
+        montrent le plus haut et le plus bas.</p>
+    </div>
+  </section>
+
+  <section class="panneau-pf" id="panneau-carte">
+    <div class="carte">
+      <div class="fictifs-tete"><div><h2 style="margin:0">Carte du marché</h2>
+        <div class="note-a">Chaque rectangle est une entreprise : sa <b>taille</b> dépend de sa capitalisation boursière,
+          sa <b>couleur</b> de sa variation à la dernière séance. Regroupées par secteur. Clique pour analyser.</div></div>
+        <div class="segment" id="carte-univers"><button data-u="cac" class="on">CAC 40</button><button data-u="eu">Euronext 100</button><button data-u="sp">S&amp;P 500</button></div></div>
+      <div class="carte-legende"><span>−3 %</span><div class="degrade"></div><span>+3 %</span><span class="note-a" id="carte-resume"></span></div>
+      <div id="carte-zone" class="carte-zone"><p class="note-a">Chargement…</p></div>
+    </div>
+  </section>
+
+  <section class="panneau-pf" id="panneau-marches">
+    <div class="carte">
+      <h2>Devises, matières premières et cryptomonnaies</h2>
+      <p class="aide">Les autres grands marchés qui influencent les actions : le change (pour les entreprises qui exportent),
+        l'énergie et les métaux (coûts de production, inflation), et les cryptomonnaies. Clique sur une carte pour son graphique.</p>
+      <div id="marches-contenu"><p class="note-a">Chargement…</p></div>
+      <p class="note-a">Les cryptomonnaies sont extrêmement volatiles (souvent plus de 50 % par an) et ne reposent sur aucun
+        bénéfice ni revenu : leur prix dépend uniquement de l'offre et de la demande.</p>
+    </div>
+  </section>
+
+  <section class="panneau-pf" id="panneau-options">
+    <div class="carte">
+      <h2 id="op-titre">Options cotées</h2>
+      <p class="aide">Les vrais prix des options négociées sur le marché, pour les actions américaines (Yahoo Finance ne
+        fournit pas celles d'Euronext). Choisis une action avec la barre de recherche, par exemple Apple ou Nvidia. Un
+        <b>call</b> donne le droit d'acheter l'action au prix d'exercice, un <b>put</b> celui de la vendre. La
+        <b>volatilité implicite</b> est la volatilité qui, dans Black-Scholes, redonne le prix du marché.</p>
+      <div id="op-contenu"></div>
+    </div>
+  </section>
+
+  <div class="cmd-fond" id="cmd-fond" hidden>
+    <div class="cmd" role="dialog" aria-label="Barre de commandes">
+      <input id="cmd-champ" autocomplete="off" spellcheck="false" placeholder="Tape une commande ou une action… (ex. LVMH, COMP MC.PA KER.PA, ECO, CARTE SP)">
+      <div class="cmd-liste" id="cmd-liste"></div>
+      <div class="cmd-pied"><span>↑ ↓ choisir</span><span>↵ valider</span><span>échap fermer</span><span>AIDE : toutes les commandes</span></div>
+    </div>
+  </div>
+
+  <section class="chargement" id="chargement">
+    <div class="boite">
+      <h2 id="ch-titre">Analyse en cours</h2>
+      <div class="sous" id="ch-sous"></div>
+      <div class="progres"><div id="barre-progres"></div></div>
+      <div class="etape" id="etape" role="status" aria-live="polite">Démarrage…</div>
+    </div>
+  </section>
+
+  <iframe id="rapport" title="Rapport d'analyse"></iframe>
+</main>
+
+<script>
+// ---------------------------------------------------------------------------
+// Données et état
+// ---------------------------------------------------------------------------
+let ACTIONS = [];
+const POPULAIRES = [
+  "MC.PA", "TTE.PA", "AIR.PA", "OR.PA", "RMS.PA", "SAN.PA", "BNP.PA", "SU.PA", "AI.PA", "SAF.PA",
+  "ASML.AS", "ABI.BR", "ENEL.MI", "ENI.MI", "EQNR.OL",
+  "AAPL", "MSFT", "NVDA", "AMZN", "GOOGL", "META", "TSLA", "BRK-B", "JPM", "V", "LLY", "XOM",
+];
+let filtre = "tous";
+let mode = "simple";
+const choix = { 1: null, 2: null };   // actions choisies dans chaque champ
+let courant = null;                  // dernière demande : {type, a, b}
+let nomRapport = null;               // nom du rapport affiché (pour les exports)
+
+const $ = (id) => document.getElementById(id);
+const normaliser = (s) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+const echapper = (s) => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+fetch("/api/actions").then(r => r.json()).then(liste => {
+  ACTIONS = liste.map(a => ({ ...a, _t: normaliser(a.ticker), _n: normaliser(a.nom), _us: a.place === "S&P 500" }));
+  $("nb-total").textContent = ACTIONS.length.toLocaleString("fr-FR");
+});
+
+// ---------------------------------------------------------------------------
+// Recherche et suggestions (un même mécanisme pour les deux champs)
+// ---------------------------------------------------------------------------
+function score(a, q) {
+  const tk = a._t.split(".")[0];
+  if (tk === q || a._t === q) return 1000;
+  if (a._n === q) return 900;
+  if (tk.startsWith(q)) return 700 - tk.length;
+  if (a._n.startsWith(q)) return 600;
+  if (a._n.split(/[\s\-&.]+/).some(m => m.startsWith(q))) return 450;
+  if (a._n.includes(q)) return 250;
+  if (a._t.includes(q)) return 200;
+  return 0;
+}
+
+function chercher(texte) {
+  const q = normaliser(texte.trim());
+  const liste = ACTIONS.filter(a => filtre === "tous" || (filtre === "us") === a._us);
+  if (!q) {
+    const rang = (a) => { const i = POPULAIRES.indexOf(a.ticker); return i < 0 ? 999 : i; };
+    return liste.slice().sort((a, b) => rang(a) - rang(b) || b.liquidite - a.liquidite).slice(0, 60);
+  }
+  return liste.map(a => [score(a, q), a]).filter(([s]) => s > 0)
+    .sort((x, y) => y[0] - x[0] || y[1].liquidite - x[1].liquidite).slice(0, 60).map(([, a]) => a);
+}
+
+function surligner(texte, q) {
+  if (!q) return echapper(texte);
+  const i = normaliser(texte).indexOf(normaliser(q));
+  if (i < 0) return echapper(texte);
+  return echapper(texte.slice(0, i)) + "<mark>" + echapper(texte.slice(i, i + q.length)) + "</mark>" +
+         echapper(texte.slice(i + q.length));
+}
+const classeBadge = (a) => a._us ? "us" : (a.place.includes("Growth") ? "growth" : "eu");
+const libelle = (a) => a.nom && a.nom !== a.ticker ? `${a.nom} (${a.ticker})` : a.ticker;
+
+function creerRecherche(n) {
+  const bloc = $("bloc" + n), champ = $("champ" + n), boite = bloc.querySelector(".suggestions");
+  let resultats = [], actif = -1;
+
+  function afficher() {
+    const q = champ.value.trim();
+    resultats = chercher(q);
+    actif = resultats.length ? 0 : -1;
+    boite.innerHTML = !resultats.length
+      ? `<div class="vide">Aucune action trouvée pour « ${echapper(q)} »</div>`
+      : (q ? "" : `<div class="entete-sugg">Valeurs populaires</div>`) + resultats.map((a, i) => `
+        <div class="sugg${i === actif ? " actif" : ""}" data-i="${i}" role="option">
+          <span class="tk">${surligner(a.ticker, q)}</span>
+          <span class="nom">${surligner(a.nom, q)}${a.secteur ? `<small>${echapper(a.secteur)}</small>` : ""}</span>
+          <span class="badge ${classeBadge(a)}">${echapper(a.place)}</span>
+        </div>`).join("");
+    boite.classList.add("ouvert");
+  }
+  function deplacer(d) {
+    if (!resultats.length) return;
+    actif = (actif + d + resultats.length) % resultats.length;
+    boite.querySelectorAll(".sugg").forEach((el, i) => el.classList.toggle("actif", i === actif));
+    boite.querySelector(".sugg.actif")?.scrollIntoView({ block: "nearest" });
+  }
+  function valider(a) {
+    boite.classList.remove("ouvert");
+    champ.value = libelle(a);
+    champ.blur();
+    choix[n] = a;
+    choisi(n, a);
+  }
+  champ.addEventListener("input", () => { choix[n] = null; majBouton(); afficher(); });
+  champ.addEventListener("focus", () => { champ.select(); afficher(); });
+  champ.addEventListener("keydown", (e) => {
+    if (e.key === "ArrowDown") { e.preventDefault(); deplacer(1); }
+    else if (e.key === "ArrowUp") { e.preventDefault(); deplacer(-1); }
+    else if (e.key === "Enter") {
+      e.preventDefault();
+      if (actif >= 0) valider(resultats[actif]);
+      else if (champ.value.trim()) { const t = champ.value.trim().toUpperCase(); valider({ ticker: t, nom: t, place: "" }); }
+    } else if (e.key === "Escape") { boite.classList.remove("ouvert"); champ.blur(); }
+  });
+  boite.addEventListener("mousedown", (e) => {
+    const el = e.target.closest(".sugg");
+    if (el) { e.preventDefault(); valider(resultats[+el.dataset.i]); }
+  });
+  document.addEventListener("click", (e) => { if (!bloc.contains(e.target)) boite.classList.remove("ouvert"); });
+  return { afficher, champ, valider };
+}
+const R = { 1: creerRecherche(1), 2: creerRecherche(2) };
+
+function choisi(n, a) {
+  if (mode === "simple") return lancerAnalyse(a, false);
+  if (mode === "portefeuille") { ajouterAuPf(a); R[1].champ.value = ""; return; }
+  if (mode === "suivi") { ajouterAuSuivi(a); R[1].champ.value = ""; return; }
+  if (mode === "simulateur") { choisirActifSim(a.ticker, a.nom); R[1].champ.value = ""; return; }
+  if (mode === "screener" || mode === "macro") { document.querySelector('#mode button[data-m="simple"]').click(); return lancerAnalyse(a, false); }
+  if (mode === "fictifs") { choisirActionOrdre(a); R[1].champ.value = ""; return; }
+  if (mode === "graphique") { ouvrirGraphique(a.ticker, a.nom); R[1].champ.value = ""; return; }
+  if (mode === "options") { chargerOptions(a.ticker, a.nom); R[1].champ.value = ""; return; }
+  if (mode === "carte" || mode === "marches") { document.querySelector('#mode button[data-m="simple"]').click(); return lancerAnalyse(a, false); }
+  majBouton();
+  if (n === 1 && !choix[2]) R[2].champ.focus();
+  else if (choix[1] && choix[2]) lancerComparaison(false);
+}
+function majBouton() { $("lancer-comp").disabled = !(choix[1] && choix[2]); }
+$("lancer-comp").addEventListener("click", () => lancerComparaison(false));
+
+$("mode").addEventListener("click", (e) => {
+  const b = e.target.closest("button"); if (!b) return;
+  mode = b.dataset.m;
+  $("mode").querySelectorAll("button").forEach(x => x.classList.toggle("on", x === b));
+  document.body.classList.toggle("mode-comparer", mode === "comparer");
+  $("champ1").placeholder = mode === "comparer" ? "Première action" :
+    mode === "portefeuille" ? "Ajouter une action au portefeuille : nom ou ticker" :
+    mode === "suivi" ? "Ajouter une action à la liste de suivi : nom ou ticker" :
+    mode === "simulateur" ? "Simuler sur une action : nom ou ticker" :
+    mode === "fictifs" ? "Choisir une action à acheter ou vendre : nom ou ticker" :
+    mode === "graphique" ? "Action à afficher : nom ou ticker" :
+    mode === "options" ? "Action américaine : nom ou ticker (ex. Apple, Nvidia)" :
+    "Rechercher une action : nom ou ticker (LVMH, Apple, ASML…)";
+  majBouton();
+  if (PANNEAUX[mode]) {
+    $("champ1").value = "";
+    ouvrirPanneau(PANNEAUX[mode]);
+    if (mode === "suivi") chargerEtatSuivi();
+    if (mode === "screener") chargerFiltre();
+    if (mode === "macro") chargerMacro();
+    if (mode === "fictifs") chargerFictifs();
+    if (window.ouvertureModePro) ouvertureModePro(mode);
+  } else {
+    Object.values(PANNEAUX).forEach(id => $(id).classList.remove("ouvert"));
+    if (nomRapport) { $("rapport").classList.add("ouvert"); $("outils").classList.add("ouvert"); }
+    else $("accueil").style.display = "";
+  }
+  (mode === "comparer" && choix[1] ? R[2] : R[1]).champ.focus();
+});
+
+$("filtre").addEventListener("click", (e) => {
+  const b = e.target.closest("button"); if (!b) return;
+  filtre = b.dataset.f;
+  $("filtre").querySelectorAll("button").forEach(x => x.classList.toggle("on", x === b));
+});
+
+document.addEventListener("keydown", (e) => {
+  if (e.key === "/" && !["INPUT", "SELECT", "TEXTAREA"].includes(document.activeElement.tagName)) {
+    e.preventDefault(); R[1].champ.focus();
+  }
+});
+
+// ---------------------------------------------------------------------------
+// Récents
+// ---------------------------------------------------------------------------
+function lireRecents() { try { return JSON.parse(localStorage.getItem("recents") || "[]"); } catch { return []; } }
+function ajouterRecent(a) {
+  const liste = [a, ...lireRecents().filter(x => x.ticker !== a.ticker)].slice(0, 8);
+  try { localStorage.setItem("recents", JSON.stringify(liste)); } catch {}
+  afficherRecents();
+}
+function afficherRecents() {
+  const liste = lireRecents();
+  $("recents").innerHTML = liste.length ? `<span class="lbl">Récents :</span>` + liste.map(a =>
+    `<span class="chip" data-t="${echapper(a.ticker)}" title="${echapper(a.nom)}">${echapper(a.ticker)}</span>`).join("") : "";
+}
+$("recents").addEventListener("click", (e) => {
+  const c = e.target.closest(".chip"); if (!c) return;
+  const a = lireRecents().find(x => x.ticker === c.dataset.t);
+  if (!a) return;
+  if (mode === "simple") R[1].valider(a);
+  else R[choix[1] ? 2 : 1].valider(a);
+});
+afficherRecents();
+
+// ---------------------------------------------------------------------------
+// Lancement et suivi
+// ---------------------------------------------------------------------------
+function lancerAnalyse(a, forcer) {
+  courant = { type: "simple", a };
+  ajouterRecent({ ticker: a.ticker, nom: a.nom, place: a.place });
+  suivre("/api/analyse", { ticker: a.ticker, periode: $("periode").value, forcer },
+         a.nom || a.ticker, `${a.ticker}${a.place ? " · " + a.place : ""}`, 8);
+}
+
+function lancerComparaison(forcer) {
+  const a = choix[1], b = choix[2];
+  if (!a || !b) return;
+  courant = { type: "comparer", a, b };
+  [a, b].forEach(x => ajouterRecent({ ticker: x.ticker, nom: x.nom, place: x.place }));
+  suivre("/api/comparer", { t1: a.ticker, t2: b.ticker, periode: $("periode").value, forcer },
+         `${a.nom || a.ticker} vs ${b.nom || b.ticker}`, `${a.ticker} · ${b.ticker}`, 17);
+}
+
+async function suivre(url, corps, titre, sous, etapesPrevues) {
+  document.body.classList.add("compact");
+  document.body.classList.toggle("vue-pf", courant && courant.type === "portefeuille");
+  Object.values(PANNEAUX).forEach(id => $(id).classList.remove("ouvert"));
+  $("accueil").style.display = "none";
+  $("rapport").classList.remove("ouvert");
+  $("outils").classList.remove("ouvert");
+  $("chargement").classList.add("ouvert");
+  $("ch-titre").textContent = titre;
+  $("ch-titre").classList.remove("erreur");
+  $("ch-sous").textContent = `${sous} · ${$("periode").selectedOptions[0].text}`;
+  $("barre-progres").style.width = "4%";
+  $("etape").textContent = "Démarrage…";
+  $("etape").classList.remove("erreur");
+
+  let id;
+  try {
+    const r = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(corps) });
+    id = (await r.json()).id;
+  } catch { return erreur("Impossible de joindre le serveur local."); }
+  if (!id) return erreur("Demande invalide.");
+
+  const demande = courant;
+  const boucle = async () => {
+    if (courant !== demande) return;
+    const s = await (await fetch(`/api/statut/${id}`)).json();
+    if (s.statut === "termine") { $("barre-progres").style.width = "100%"; return afficherRapport(s, titre); }
+    if (s.statut === "erreur") return erreur(s.message);
+    $("barre-progres").style.width = `${Math.min(95, Math.max(4, (s.etapes / etapesPrevues) * 95))}%`;
+    $("etape").textContent = s.etape.replace(/\[\d\/\d\]\s*/, "");
+    setTimeout(boucle, 400);
+  };
+  boucle();
+}
+
+function afficherRapport(s, titre) {
+  $("chargement").classList.remove("ouvert");
+  nomRapport = s.nom;
+  $("rapport").src = s.rapport;
+  $("rapport").classList.add("ouvert");
+  $("outils").classList.add("ouvert");
+  $("message-export").textContent = "";
+  $("titre-rapport").textContent = `${titre} · ${$("periode").selectedOptions[0].text}`;
+}
+
+function erreur(message) {
+  $("ch-titre").textContent = "L'analyse n'a pas abouti";
+  $("ch-titre").classList.add("erreur");
+  $("etape").textContent = message + " Essaie une autre action ou une autre période.";
+  $("etape").classList.add("erreur");
+  $("barre-progres").style.width = "0";
+}
+
+function relancer(forcer) {
+  if (!courant) return;
+  if (courant.type === "simple") lancerAnalyse(courant.a, forcer);
+  else if (courant.type === "portefeuille") lancerPortefeuille();
+  else lancerComparaison(forcer);
+}
+$("actualiser").addEventListener("click", () => relancer(true));
+$("periode").addEventListener("change", () => relancer(false));
+
+// ---------------------------------------------------------------------------
+// Exports : fenêtre « Enregistrer sous » du Mac dans l'application,
+// téléchargement classique dans un navigateur
+// ---------------------------------------------------------------------------
+async function exporter(format) {
+  if (!nomRapport) return;
+  const bouton = $("export-" + format), msg = $("message-export");
+  bouton.disabled = true;
+  msg.textContent = format === "pdf" ? "Création du PDF…" : "Création du classeur Excel…";
+  try {
+    if (window.pywebview && window.pywebview.api) {
+      const chemin = await window.pywebview.api.enregistrer(format, nomRapport);
+      msg.textContent = chemin ? "Enregistré : " + chemin.split("/").pop() : "";
+    } else {
+      window.location.href = `/api/export/${format}/${encodeURIComponent(nomRapport)}`;
+      msg.textContent = "Téléchargement lancé.";
+    }
+  } catch (e) {
+    msg.textContent = "L'export a échoué.";
+  } finally {
+    bouton.disabled = false;
+  }
+}
+$("export-pdf").addEventListener("click", () => exporter("pdf"));
+$("export-xlsx").addEventListener("click", () => exporter("xlsx"));
+
+// ---------------------------------------------------------------------------
+// Portefeuille : enregistré sur le disque par le serveur (il survit aux redémarrages)
+// ---------------------------------------------------------------------------
+let portefeuille = [];
+const MONTANT_DEFAUT = 1000;
+const SANS_RISQUE = "SANS_RISQUE";
+$("ajout-rf").addEventListener("click", () =>
+  ajouterAuPf({ ticker: SANS_RISQUE, nom: "Placement sans risque (3 % par an)", place: "Livret / monétaire" }));
+
+async function chargerPf() {
+  try { portefeuille = await (await fetch("/api/portefeuille")).json(); } catch { portefeuille = []; }
+  afficherPf();
+}
+async function sauverPf() {
+  try {
+    await fetch("/api/portefeuille", { method: "POST", headers: { "Content-Type": "application/json" },
+                                       body: JSON.stringify(portefeuille) });
+  } catch {}
+}
+function ajouterAuPf(a) {
+  if (!a || !a.ticker) return false;
+  if (portefeuille.some(l => l.ticker === a.ticker)) { afficherPf(a.ticker); return false; }
+  portefeuille.push({ ticker: a.ticker, nom: a.nom || a.ticker, place: a.place || "", montant: MONTANT_DEFAUT });
+  sauverPf(); afficherPf(a.ticker);
+  return true;
+}
+function afficherPf(surligne) {
+  $("nb-pf").textContent = portefeuille.length;
+  const total = portefeuille.reduce((s, l) => s + (+l.montant || 0), 0);
+  const fr = (x, d = 0) => x.toLocaleString("fr-FR", { maximumFractionDigits: d, minimumFractionDigits: d });
+  $("liste-pf").innerHTML = !portefeuille.length
+    ? `<div class="pf-vide">Ton portefeuille est vide. Tape le nom d'une action dans la barre de recherche.</div>`
+    : `<table class="t-pf"><thead><tr><th>Ticker</th><th>Entreprise</th><th>Place</th>
+        <th>Montant investi (€)</th><th>Poids</th><th>Date d'achat</th><th>Prix payé</th><th></th></tr></thead><tbody>` +
+      portefeuille.map((l, i) => `<tr class="${l.ticker === SANS_RISQUE ? "rf" : ""}"${l.ticker === surligne ? ' style="background:var(--accent-doux)"' : ""}>
+        <td class="tk">${l.ticker === SANS_RISQUE ? "—" : echapper(l.ticker)}</td><td>${echapper(l.nom)}</td><td>${echapper(l.place)}</td>
+        <td><input type="number" min="0" step="100" value="${+l.montant || 0}" data-i="${i}"></td>
+        <td>${total ? fr((+l.montant || 0) / total * 100, 1) + " %" : "—"}</td>
+        <td><input type="date" data-i="${i}" data-champ="date_achat" value="${echapper(l.date_achat || "")}" max="${new Date().toISOString().slice(0, 10)}"></td>
+        <td>${l.ticker === SANS_RISQUE ? "" : `<input class="court" type="number" min="0" step="0.01" data-i="${i}" data-champ="prix_achat" value="${l.prix_achat || ""}" placeholder="cours du jour" title="Prix payé par action, dans la devise de cotation (facultatif)">`}</td>
+        <td><button class="suppr" data-i="${i}" title="Retirer" aria-label="Retirer">×</button></td></tr>`).join("") +
+      `</tbody><tfoot><tr><td></td><td>Total</td><td></td><td>${fr(total)} €</td><td>100 %</td><td></td><td></td><td></td></tr></tfoot></table>`;
+  $("lancer-pf").disabled = portefeuille.filter(l => +l.montant > 0 && l.ticker !== SANS_RISQUE).length < 2;
+  $("lancer-pf").title = $("lancer-pf").disabled ? "Ajoute au moins deux actions avec un montant" : "";
+  $("ajout-rf").disabled = portefeuille.some(l => l.ticker === SANS_RISQUE);
+}
+$("liste-pf").addEventListener("change", (e) => {
+  if (e.target.matches("input[data-champ]")) {
+    const l = portefeuille[+e.target.dataset.i], c = e.target.dataset.champ;
+    if (e.target.value) l[c] = c === "prix_achat" ? +e.target.value : e.target.value; else delete l[c];
+    sauverPf(); afficherPf();
+  } else if (e.target.matches("input[data-i]")) {
+    portefeuille[+e.target.dataset.i].montant = Math.max(0, +e.target.value || 0);
+    sauverPf(); afficherPf();
+  }
+});
+$("liste-pf").addEventListener("click", (e) => {
+  const b = e.target.closest(".suppr"); if (!b) return;
+  portefeuille.splice(+b.dataset.i, 1); sauverPf(); afficherPf();
+});
+$("egaliser-pf").addEventListener("click", () => {
+  const total = portefeuille.reduce((s, l) => s + (+l.montant || 0), 0) || MONTANT_DEFAUT * portefeuille.length;
+  portefeuille.forEach(l => l.montant = Math.round(total / portefeuille.length));
+  sauverPf(); afficherPf();
+});
+$("vider-pf").addEventListener("click", () => {
+  if (!portefeuille.length || !confirm("Retirer toutes les actions du portefeuille ?")) return;
+  portefeuille = []; sauverPf(); afficherPf();
+});
+const PANNEAUX = { portefeuille: "panneau-pf", suivi: "panneau-suivi", simulateur: "panneau-sim", screener: "panneau-screener",
+                   macro: "panneau-macro", fictifs: "panneau-fictifs", graphique: "panneau-graphique",
+                   carte: "panneau-carte", marches: "panneau-marches", options: "panneau-options" };
+function ouvrirPanneau(id = "panneau-pf") {
+  document.body.classList.remove("vue-pf");
+  document.body.classList.add("compact");
+  $("accueil").style.display = "none";
+  $("chargement").classList.remove("ouvert");
+  $("rapport").classList.remove("ouvert");
+  $("outils").classList.remove("ouvert");
+  Object.values(PANNEAUX).forEach(p => $(p).classList.toggle("ouvert", p === id));
+  if (id === "panneau-pf") afficherPf();
+}
+function lancerPortefeuille() {
+  courant = { type: "portefeuille" };
+  suivre("/api/analyse_portefeuille", { periode: $("periode").value, enveloppe: $("enveloppe").value }, "Ton portefeuille",
+         `${portefeuille.filter(l => l.ticker !== SANS_RISQUE).length} actions` +
+         (portefeuille.some(l => l.ticker === SANS_RISQUE) ? " + placement sans risque" : ""), 7);
+}
+$("lancer-pf").addEventListener("click", lancerPortefeuille);
+try { $("enveloppe").value = localStorage.getItem("enveloppe") || "CTO"; } catch {}
+$("enveloppe").addEventListener("change", () => { try { localStorage.setItem("enveloppe", $("enveloppe").value); } catch {} });
+$("retour-pf").addEventListener("click", () => document.querySelector('#mode button[data-m="portefeuille"]').click());
+
+// Bouton « + Portefeuille » d'un rapport : ajoute l'action (ou les deux actions comparées)
+$("ajout-pf").addEventListener("click", () => {
+  if (!courant) return;
+  const actions = courant.type === "simple" ? [courant.a] : courant.type === "comparer" ? [courant.a, courant.b] : [];
+  const ajoutees = actions.filter(a => ajouterAuPf(a));
+  $("message-export").textContent = ajoutees.length
+    ? `${ajoutees.map(a => a.ticker).join(" et ")} ajouté${ajoutees.length > 1 ? "s" : ""} au portefeuille ` +
+      `(${portefeuille.length} action${portefeuille.length > 1 ? "s" : ""}).`
+    : "Déjà dans le portefeuille.";
+});
+
+// ---------------------------------------------------------------------------
+// Accueil : tableau de bord des marchés
+// ---------------------------------------------------------------------------
+const fr = (x, d = 2) => (x == null || isNaN(x)) ? "—" :
+  x.toLocaleString("fr-FR", { minimumFractionDigits: d, maximumFractionDigits: d });
+const pctTxt = (x, d = 1) => (x == null || isNaN(x)) ? "—" : (x >= 0 ? "+" : "−") + fr(Math.abs(x) * 100, d) + " %";
+const sens = (x) => x == null ? "" : (x >= 0 ? "hausse" : "baisse");
+
+function mini(points, largeur = 160, hauteur = 34) {
+  if (!points || points.length < 2) return "";
+  const v = points.map(p => p[1]), mn = Math.min(...v), mx = Math.max(...v), e = (mx - mn) || 1;
+  const d = v.map((y, i) => `${(i / (v.length - 1) * largeur).toFixed(1)},${(hauteur - 2 - (y - mn) / e * (hauteur - 4)).toFixed(1)}`).join(" ");
+  const c = v[v.length - 1] >= v[0] ? "var(--eu)" : "var(--rouge)";
+  return `<svg viewBox="0 0 ${largeur} ${hauteur}" preserveAspectRatio="none"><polyline points="${d}" fill="none" stroke="${c}" stroke-width="1.6"/></svg>`;
+}
+
+let indicesDonnees = [], indiceChoisi = "^FCHI", periodeGG = "1y";
+
+async function chargerIndices() {
+  try {
+    const r = await fetch("/api/marche/indices"); const d = await r.json();
+    if (!Array.isArray(d)) throw 0;
+    indicesDonnees = d;
+    $("indices").innerHTML = d.map(i => `
+      <div class="indice${i.code === indiceChoisi ? " actif" : ""}" data-c="${echapper(i.code)}" title="${echapper(i.aide)}">
+        <div class="n">${echapper(i.nom)} <span class="z">${echapper(i.zone)}</span></div>
+        <div class="val">${fr(i.dernier, i.code === "EURUSD=X" ? 4 : 2)}${i.unite === "%" ? " %" : ""}</div>
+        <div class="var ${sens(i.var_jour)}">${pctTxt(i.var_jour, 2)} <span class="z">· ${pctTxt(i.var_annee, 1)} en ${new Date().getFullYear()}</span></div>
+        ${mini(i.mini)}
+      </div>`).join("");
+    $("maj-indices").textContent = d.length ? `cours du ${d[0].date}` : "";
+    // Bandeau défilant : la liste est doublée pour boucler sans saut
+    const items = d.map(i => `<span class="item" data-c="${echapper(i.code)}"><b>${echapper(i.nom)}</b>
+      <span>${fr(i.dernier, i.code === "EURUSD=X" ? 4 : 2)}</span><span class="${sens(i.var_jour)}">${pctTxt(i.var_jour, 2)}</span></span>`).join("");
+    $("defile").innerHTML = items + items;
+    grandGraphe();
+  } catch { $("indices").innerHTML = `<p class="note-a">Données de marché indisponibles (connexion internet ?).</p>`; }
+}
+$("defile").addEventListener("click", (e) => {
+  const it = e.target.closest(".item"); if (!it) return;
+  indiceChoisi = it.dataset.c;
+  $("indices").querySelectorAll(".indice").forEach(x => x.classList.toggle("actif", x.dataset.c === indiceChoisi));
+  grandGraphe();
+  document.querySelector(".grand-graphe").scrollIntoView({ behavior: "smooth", block: "center" });
+});
+$("indices").addEventListener("click", (e) => {
+  const c = e.target.closest(".indice"); if (!c) return;
+  indiceChoisi = c.dataset.c;
+  $("indices").querySelectorAll(".indice").forEach(x => x.classList.toggle("actif", x === c));
+  grandGraphe();
+});
+$("gg-periodes").addEventListener("click", (e) => {
+  const b = e.target.closest("button"); if (!b) return;
+  periodeGG = b.dataset.p;
+  $("gg-periodes").querySelectorAll("button").forEach(x => x.classList.toggle("on", x === b));
+  grandGraphe();
+});
+
+let ggPoints = [];
+async function grandGraphe() {
+  const info = indicesDonnees.find(i => i.code === indiceChoisi) || {};
+  $("gg-titre").textContent = info.nom || indiceChoisi;
+  $("gg-aide").textContent = info.aide || "";
+  try {
+    const d = await (await fetch(`/api/marche/indice/${encodeURIComponent(indiceChoisi)}?periode=${periodeGG}`)).json();
+    ggPoints = d.points || [];
+    const libP = { "1m": "Sur 1 mois", "6m": "Sur 6 mois", "1y": "Sur 1 an", "5y": "Sur 5 ans", "10y": "Sur 10 ans",
+                   "max": `Depuis ${info.depuis || "le début"}` }[periodeGG];
+    $("gg-chiffres").innerHTML = `${libP} : <b class="${sens(d.variation)}">${pctTxt(d.variation)}</b> · plus haut ${fr(d.maxi)} · plus bas ${fr(d.mini_v)} · ${echapper(d.unite || "")}`;
+    dessinerGG();
+  } catch { $("svg-gg").innerHTML = ""; }
+}
+
+function dessinerGG(survol) {
+  const svg = $("svg-gg"), W = 1000, H = 300, g = 56, b = 26, h = 10;
+  const pts = ggPoints; if (pts.length < 2) { svg.innerHTML = ""; return; }
+  const v = pts.map(p => p[1]); let mn = Math.min(...v), mx = Math.max(...v);
+  const marge = (mx - mn) * 0.06 || 1; mn -= marge; mx += marge;
+  const X = i => g + i / (pts.length - 1) * (W - g - 8), Y = y => h + (1 - (y - mn) / (mx - mn)) * (H - h - b);
+  const c = v[v.length - 1] >= v[0] ? "var(--eu)" : "var(--rouge)";
+  let out = "";
+  for (let k = 0; k <= 4; k++) {
+    const y = mn + (mx - mn) * k / 4, yy = Y(y);
+    out += `<line class="grille" x1="${g}" x2="${W - 8}" y1="${yy}" y2="${yy}"/><text x="${g - 6}" y="${yy + 4}" text-anchor="end">${fr(y, y < 10 ? 2 : 0)}</text>`;
+  }
+  for (let k = 0; k <= 5; k++) {
+    const i = Math.round(k / 5 * (pts.length - 1)), dt = new Date(pts[i][0]);
+    const lib = ["1m", "6m"].includes(periodeGG) ? dt.toLocaleDateString("fr-FR", { day: "numeric", month: "short" })
+              : dt.toLocaleDateString("fr-FR", { month: "short", year: "numeric" });
+    out += `<text x="${X(i)}" y="${H - 6}" text-anchor="${k === 0 ? "start" : k === 5 ? "end" : "middle"}">${lib}</text>`;
+  }
+  const chemin = pts.map((p, i) => `${i ? "L" : "M"}${X(i).toFixed(1)},${Y(p[1]).toFixed(1)}`).join("");
+  out += `<defs><linearGradient id="deg" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="${c}" stop-opacity=".25"/><stop offset="1" stop-color="${c}" stop-opacity="0"/></linearGradient></defs>`;
+  out += `<path d="${chemin}L${X(pts.length - 1)},${H - b}L${X(0)},${H - b}Z" fill="url(#deg)"/>`;
+  out += `<path class="ligne" d="${chemin}" stroke="${c}"/>`;
+  if (survol != null) {
+    const p = pts[survol], x = X(survol), y = Y(p[1]);
+    const txt = `${new Date(p[0]).toLocaleDateString("fr-FR")} : ${fr(p[1])}`, lb = txt.length * 6.6 + 16;
+    const bx = Math.min(Math.max(x - lb / 2, g), W - lb - 8);
+    out += `<line class="curseur" x1="${x}" x2="${x}" y1="${h}" y2="${H - b}"/><circle cx="${x}" cy="${y}" r="4" fill="${c}"/>`;
+    out += `<g class="bulle"><rect x="${bx}" y="${h}" width="${lb}" height="22" rx="6"/><text x="${bx + 8}" y="${h + 15}">${txt}</text></g>`;
+  }
+  out += `<rect x="${g}" y="0" width="${W - g}" height="${H}" fill="transparent" id="zone-gg"/>`;
+  svg.innerHTML = out;
+}
+$("svg-gg").addEventListener("mousemove", (e) => {
+  if (ggPoints.length < 2) return;
+  const r = $("svg-gg").getBoundingClientRect(), x = (e.clientX - r.left) / r.width * 1000;
+  const i = Math.round(Math.min(Math.max((x - 56) / (1000 - 56 - 8), 0), 1) * (ggPoints.length - 1));
+  dessinerGG(i);
+});
+$("svg-gg").addEventListener("mouseleave", () => dessinerGG());
+
+function ligneAction(a, colonne) {
+  const deja = portefeuille.some(l => l.ticker === a.ticker);
+  return `<tr class="cliquable" data-t="${echapper(a.ticker)}" data-n="${echapper(a.nom)}" data-p="${echapper(a.place || "")}" title="Analyser ${echapper(a.nom)}">
+    <td class="tk">${echapper(a.ticker)}</td><td class="nm">${echapper(a.nom)}</td>${colonne}
+    <td><button class="plus${deja ? " fait" : ""}" title="${deja ? "Déjà dans le portefeuille" : "Ajouter au portefeuille"}">${deja ? "✓" : "+"}</button></td></tr>`;
+}
+function brancherLignes(table) {
+  table.addEventListener("click", (e) => {
+    const tr = e.target.closest("tr.cliquable"); if (!tr) return;
+    const a = { ticker: tr.dataset.t, nom: tr.dataset.n, place: tr.dataset.p };
+    if (e.target.closest(".plus")) {
+      ajouterAuPf(a);
+      const b = e.target.closest(".plus"); b.textContent = "✓"; b.classList.add("fait"); b.title = "Dans le portefeuille";
+      return;
+    }
+    R[1].valider(a);
+  });
+}
+["phares", "hausses", "baisses", "volatiles"].forEach(id => brancherLignes($(id)));
+
+const capiTxt = (c, dev) => c ? `${fr(c / 1e9, 0)} Md ${dev === "USD" ? "$" : dev === "EUR" ? "€" : dev}` : "";
+async function chargerPhares() {
+  try {
+    const d = await (await fetch("/api/marche/phares")).json();
+    $("phares").innerHTML = d.map(a => ligneAction(a,
+      `<td class="num">${capiTxt(a.capi, a.devise)}</td><td class="num ${sens(a.var_jour)}">${pctTxt(a.var_jour)}</td><td>${mini(a.mini, 70, 22)}</td>`)).join("");
+  } catch { $("phares").innerHTML = "<tr><td>Indisponible.</td></tr>"; }
+}
+async function chargerPalmares() {
+  for (let essai = 0; essai < 20; essai++) {      // le calcul peut prendre ~15 s au premier lancement
+    try {
+      const r = await fetch("/api/marche/palmares");
+      if (r.ok) {
+        const d = await r.json();
+        $("hausses").innerHTML = d.hausses.map(a => ligneAction(a, `<td class="num hausse">${pctTxt(a.var_jour)}</td>`)).join("");
+        $("baisses").innerHTML = d.baisses.map(a => ligneAction(a, `<td class="num baisse">${pctTxt(a.var_jour)}</td>`)).join("");
+        $("volatiles").innerHTML = d.volatiles.map(a => ligneAction(a, `<td class="num">${fr(a.vol * 100, 0)} %</td>`)).join("");
+        $("note-univers").textContent = `Classements calculés sur ${d.nb} actions : le S&P 500 et les 100 valeurs les plus échangées d'Euronext.`;
+        return;
+      }
+    } catch {}
+    await new Promise(r => setTimeout(r, 3000));
+  }
+}
+const ilYa = (iso) => {
+  if (!iso) return "";
+  const m = (Date.now() - new Date(iso)) / 60000;
+  return m < 60 ? `il y a ${Math.max(1, Math.round(m))} min` : m < 1440 ? `il y a ${Math.round(m / 60)} h`
+       : new Date(iso).toLocaleDateString("fr-FR", { day: "numeric", month: "short" });
+};
+async function chargerActus() {
+  try {
+    const d = await (await fetch("/api/actualites")).json();
+    $("actus").innerHTML = d.map(a => `<li><a href="${echapper(a.lien)}" target="_blank" rel="noopener">${echapper(a.titre)}</a>
+      <div class="meta">${echapper(a.source)} · ${ilYa(a.date)}</div></li>`).join("") || "<li>Aucune actualité.</li>";
+  } catch { $("actus").innerHTML = "<li>Actualités indisponibles.</li>"; }
+}
+
+function allerAccueil() {
+  document.body.classList.remove("compact", "vue-pf");
+  $("chargement").classList.remove("ouvert");
+  $("rapport").classList.remove("ouvert");
+  $("outils").classList.remove("ouvert");
+  Object.values(PANNEAUX).forEach(id => $(id).classList.remove("ouvert"));
+  $("accueil").style.display = "";
+  if (PANNEAUX[mode]) { document.querySelector('#mode button[data-m="simple"]').click(); document.body.classList.remove("compact"); }
+}
+$("bouton-accueil").addEventListener("click", allerAccueil);
+
+// ---------------------------------------------------------------------------
+// Graphique à plusieurs courbes (simulateur)
+// ---------------------------------------------------------------------------
+function courbes(svg, series, couleurs, survol, opts = {}) {
+  const unite = opts.unite ?? " €", dec = opts.decimales ?? 0, depuisZero = opts.depuisZero ?? true;
+  const noms = Object.keys(series), W = 1000, H = 300, g = 64, b = 26, h = 10;
+  const base = series[noms[0]]; if (!base || base.length < 2) { svg.innerHTML = ""; return; }
+  const toutes = noms.flatMap(n => series[n].map(p => p[1])).concat(opts.repere != null ? [opts.repere] : []);
+  let mn = depuisZero ? Math.min(0, ...toutes) : Math.min(...toutes), mx = Math.max(...toutes);
+  const marge = (mx - mn) * 0.05 || 1; mx += marge; if (!depuisZero) mn -= marge;
+  const X = i => g + i / (base.length - 1) * (W - g - 8), Y = v => h + (1 - (v - mn) / (mx - mn)) * (H - h - b);
+  let out = "";
+  for (let k = 0; k <= 4; k++) { const v = mn + (mx - mn) * k / 4;
+    out += `<line class="grille" x1="${g}" x2="${W - 8}" y1="${Y(v)}" y2="${Y(v)}"/><text x="${g - 6}" y="${Y(v) + 4}" text-anchor="end">${fr(v, dec)}${unite}</text>`; }
+  if (opts.repere != null) out += `<line x1="${g}" x2="${W - 8}" y1="${Y(opts.repere)}" y2="${Y(opts.repere)}" stroke="var(--rouge)" stroke-dasharray="6 4" stroke-width="1.2"/>`;
+  for (let k = 0; k <= 5; k++) { const i = Math.round(k / 5 * (base.length - 1));
+    out += `<text x="${X(i)}" y="${H - 6}" text-anchor="${k === 0 ? "start" : k === 5 ? "end" : "middle"}">${new Date(base[i][0]).toLocaleDateString("fr-FR", { month: "short", year: "numeric" })}</text>`; }
+  // Abscisses par date (les séries peuvent avoir des dates différentes : mensuel, trimestriel…)
+  const t0 = +new Date(base[0][0]), t1 = Math.max(...noms.map(n => +new Date(series[n][series[n].length - 1][0])));
+  const XD = d => g + (+new Date(d) - t0) / ((t1 - t0) || 1) * (W - g - 8);
+  noms.forEach((n, j) => {
+    const pts = series[n].filter(p => +new Date(p[0]) >= t0);
+    const d = pts.map((p, i) => `${i ? "L" : "M"}${XD(p[0]).toFixed(1)},${Y(p[1]).toFixed(1)}`).join("");
+    out += `<path d="${d}" fill="none" stroke="${couleurs[j]}" stroke-width="${j === 0 ? 2.4 : 1.6}" ${j === 1 && opts.pointilles !== false ? 'stroke-dasharray="5 4"' : ""}/>`;
+  });
+  if (survol != null) {
+    const x = X(survol), tS = +new Date(base[survol][0]);
+    const proche = n => series[n].reduce((m, p) => Math.abs(+new Date(p[0]) - tS) < Math.abs(+new Date(m[0]) - tS) ? p : m);
+    const lignes = [new Date(base[survol][0]).toLocaleDateString("fr-FR", opts.mois ? { month: "long", year: "numeric" } : {})]
+      .concat(noms.map(n => `${n} : ${fr(proche(n)[1], dec || (opts.unite === " %" ? 1 : 0))}${unite}`));
+    const lb = Math.max(...lignes.map(l => l.length)) * 6.6 + 16, bx = x + lb + 20 > W ? x - lb - 10 : x + 10;
+    out += `<line x1="${x}" x2="${x}" y1="${h}" y2="${H - b}" stroke="var(--doux)" stroke-dasharray="3 3"/>`;
+    out += `<g class="bulle"><rect x="${bx}" y="${h}" width="${lb}" height="${lignes.length * 17 + 8}" rx="6"/>` +
+      lignes.map((l, k) => `<text x="${bx + 8}" y="${h + 18 + k * 17}" ${k ? `fill="${couleurs[k - 1]}"` : ""}>${echapper(l)}</text>`).join("") + "</g>";
+  }
+  svg.innerHTML = out;
+  svg.onmousemove = (e) => { const r = svg.getBoundingClientRect(), xx = (e.clientX - r.left) / r.width * W;
+    courbes(svg, series, couleurs, Math.round(Math.min(Math.max((xx - g) / (W - g - 8), 0), 1) * (base.length - 1)), opts); };
+  svg.onmouseleave = () => courbes(svg, series, couleurs, null, opts);
+}
+
+// ---------------------------------------------------------------------------
+// Simulateur
+// ---------------------------------------------------------------------------
+let actifSim = { ticker: "^FCHI", nom: "CAC 40" }, notesSim = {};
+async function chargerPresets() {
+  try {
+    const d = await (await fetch("/api/simulateur/presets")).json();
+    $("sim-presets").innerHTML = d.map(x => `<button data-t="${echapper(x.ticker)}" data-n="${echapper(x.nom)}" class="${x.ticker === actifSim.ticker ? "on" : ""}">${echapper(x.nom)}</button>`).join("");
+    d.forEach(x => notesSim[x.ticker] = x.note);
+    $("sim-note").textContent = notesSim[actifSim.ticker] || "";
+  } catch {}
+}
+function choisirActifSim(t, n) {
+  actifSim = { ticker: t, nom: n || t };
+  $("sim-actif").value = `${actifSim.nom} (${t})`;
+  $("sim-presets").querySelectorAll("button").forEach(b => b.classList.toggle("on", b.dataset.t === t));
+  $("sim-note").textContent = notesSim[t] || "Action : cours ajustés des dividendes (dividendes réinvestis), convertis en euros.";
+}
+$("sim-presets").addEventListener("click", (e) => { const b = e.target.closest("button"); if (b) choisirActifSim(b.dataset.t, b.dataset.n); });
+$("sim-lancer").addEventListener("click", async () => {
+  const zone = $("sim-resultat");
+  zone.innerHTML = `<p class="note-a">Calcul en cours…</p>`;
+  let r;
+  try {
+    const rep = await fetch("/api/simuler", { method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ticker: actifSim.ticker, initial: $("sim-initial").value, mensuel: $("sim-mensuel").value, debut: $("sim-debut").value }) });
+    r = await rep.json();
+    if (r.erreur) throw new Error(r.erreur);
+  } catch (e) { zone.innerHTML = `<p class="erreur">${echapper(e.message || "La simulation a échoué.")}</p>`; return; }
+  const couleurs = ["var(--accent)", "var(--doux)", "var(--orange)", "var(--eu)"];
+  const gain = r.valeur_finale - r.total_verse, ans = r.nb_versements / 12;
+  const lecture = [
+    `En versant ${fr(+$("sim-mensuel").value, 0)} € par mois${+$("sim-initial").value ? ` (plus ${fr(+$("sim-initial").value, 0)} € au départ)` : ""} dans <b>${echapper(actifSim.nom)}</b> depuis le ${r.debut}, tu aurais versé <b>${fr(r.total_verse, 0)} €</b> en ${r.nb_versements} fois. Ils vaudraient aujourd'hui <b>${fr(r.valeur_finale, 0)} €</b> : ${gain >= 0 ? "un gain" : "une perte"} de ${fr(Math.abs(gain), 0)} €.`,
+    `Rendement annuel moyen de tes versements (TRI) : <b>${pctTxt(r.tri)}</b>. Sur un livret à 3 %, les mêmes versements donneraient ${fr(r.valeur_livret, 0)} €.`,
+    `Tout investir dès le départ aurait donné <b>${fr(r.valeur_tout_au_debut, 0)} €</b>. ${r.valeur_tout_au_debut > r.valeur_finale ? "Sur un marché qui monte, investir tôt rapporte plus ; l'investissement mensuel, lui, lisse le prix d'achat et évite de tout acheter au plus haut." : "Ici, étaler les achats a mieux réussi : tu as acheté une partie des titres pendant les baisses."}`,
+    r.pire_ecart < 0 ? `Le moment le plus difficile : le ${r.date_pire}, tes placements valaient ${fr(Math.abs(r.pire_ecart), 0)} € de moins que ce que tu avais versé. Pendant ${pctTxt(r.jours_sous_l_eau, 0).replace("+", "")} du temps, tu étais en perte : la régularité demande de la patience.` :
+      `À aucun moment tes placements ne sont passés sous les sommes versées.`,
+  ];
+  zone.innerHTML = `<div class="kpis-s">
+      <div><div class="l">Total versé</div><div class="v">${fr(r.total_verse, 0)} €</div></div>
+      <div><div class="l">Valeur aujourd'hui</div><div class="v">${fr(r.valeur_finale, 0)} €</div></div>
+      <div><div class="l">Gain</div><div class="v ${sens(gain)}">${gain >= 0 ? "+" : "−"}${fr(Math.abs(gain), 0)} €</div></div>
+      <div><div class="l">Rendement annuel (TRI)</div><div class="v ${sens(r.tri)}">${pctTxt(r.tri)}</div></div>
+      <div><div class="l">Argent multiplié par</div><div class="v">× ${fr(r.multiple, 2)}</div></div></div>
+    <div class="legende">${Object.keys(r.series).map((n, j) => `<span style="--c:${couleurs[j]}">${echapper(n)}</span>`).join("")}</div>
+    <svg class="svg-courbes" id="sim-svg" viewBox="0 0 1000 300" preserveAspectRatio="none"></svg>
+    <div class="lecture-s">${lecture.map(x => `<p>${x}</p>`).join("")}
+      <p style="color:var(--doux);font-size:12px">Simulation sur le passé, sans frais ni impôts : les performances passées ne préjugent pas des performances futures.</p></div>`;
+  courbes($("sim-svg"), r.series, couleurs);
+});
+
+// ---------------------------------------------------------------------------
+// Liste de suivi, agenda et alertes
+// ---------------------------------------------------------------------------
+let listeSuivi = [];
+async function chargerSuivi() {
+  try { listeSuivi = await (await fetch("/api/suivi")).json(); } catch { listeSuivi = []; }
+  $("nb-suivi").textContent = listeSuivi.length;
+}
+async function sauverSuivi() {
+  try {
+    listeSuivi = await (await fetch("/api/suivi", { method: "POST", headers: { "Content-Type": "application/json" },
+                                                    body: JSON.stringify(listeSuivi) })).json();
+  } catch {}
+  $("nb-suivi").textContent = listeSuivi.length;
+}
+async function ajouterAuSuivi(a) {
+  if (!a || !a.ticker || listeSuivi.some(l => l.ticker === a.ticker)) return false;
+  listeSuivi.push({ ticker: a.ticker, nom: a.nom || a.ticker, place: a.place || "", baisse: 5 });
+  await sauverSuivi();
+  if (mode === "suivi") chargerEtatSuivi();
+  return true;
+}
+async function chargerEtatSuivi() {
+  afficherSuivi({});
+  try {
+    const d = await (await fetch("/api/suivi/etat")).json();
+    const cours = Object.fromEntries((d.lignes || []).map(l => [l.ticker, l]));
+    afficherSuivi(cours);
+    const types = { "Résultats": "📊", "Détachement du dividende": "💶", "Paiement du dividende": "💶" };
+    $("agenda").innerHTML = (d.agenda || []).map(e => `<li><span class="d">${new Date(e.date).toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" })}</span>
+      <span>${types[e.type] || ""} <b>${echapper(e.type)}</b> · ${echapper(e.nom)} <span class="t">(${echapper(e.ticker)} · ${e.source === "portefeuille" ? "portefeuille" : "suivi"})${e.detail ? " · " + echapper(e.detail) : ""}</span></span></li>`).join("")
+      || "<li>Aucune date annoncée pour tes actions.</li>";
+    $("alertes").innerHTML = (d.alertes || []).map(a => `<li><span class="d">${echapper(a.heure)}</span><span>${echapper(a.texte)}</span></li>`).join("") || "<li>Aucune alerte pour l'instant.</li>";
+  } catch { $("agenda").innerHTML = "<li>Agenda indisponible.</li>"; }
+}
+function afficherSuivi(cours) {
+  $("liste-suivi").innerHTML = !listeSuivi.length
+    ? `<div class="pf-vide">Ta liste est vide. Tape le nom d'une action dans la barre de recherche pour la suivre.</div>`
+    : `<table class="t-pf"><thead><tr><th>Ticker</th><th>Entreprise</th><th>Cours</th><th>Jour</th>
+        <th title="Alerte si l'action perd plus que ce pourcentage dans la journée">Alerte baisse (%)</th>
+        <th title="Alerte si le cours passe sous ce prix">Plancher</th><th title="Alerte si le cours dépasse ce prix">Plafond</th><th></th></tr></thead><tbody>` +
+      listeSuivi.map((l, i) => { const c = cours[l.ticker] || {};
+        return `<tr><td class="tk">${echapper(l.ticker)}</td><td>${echapper(l.nom)}</td>
+        <td>${c.dernier != null ? fr(c.dernier) : "…"}</td><td class="${sens(c.var_jour)}">${c.var_jour != null ? pctTxt(c.var_jour) : ""}</td>
+        <td><input class="court" type="number" min="0" step="0.5" data-i="${i}" data-s="baisse" value="${l.baisse ?? ""}"></td>
+        <td><input class="court" type="number" min="0" step="0.01" data-i="${i}" data-s="bas" value="${l.bas ?? ""}"></td>
+        <td><input class="court" type="number" min="0" step="0.01" data-i="${i}" data-s="haut" value="${l.haut ?? ""}"></td>
+        <td><button class="suppr" data-i="${i}" title="Ne plus suivre" aria-label="Ne plus suivre">×</button></td></tr>`; }).join("") + "</tbody></table>";
+}
+$("liste-suivi").addEventListener("change", async (e) => {
+  const inp = e.target.closest("input[data-s]"); if (!inp) return;
+  listeSuivi[+inp.dataset.i][inp.dataset.s] = inp.value === "" ? null : +inp.value;
+  await sauverSuivi();
+});
+$("liste-suivi").addEventListener("click", async (e) => {
+  const b = e.target.closest(".suppr"); if (!b) return;
+  listeSuivi.splice(+b.dataset.i, 1); await sauverSuivi(); chargerEtatSuivi();
+});
+$("ajout-suivi").addEventListener("click", async () => {
+  if (!courant) return;
+  const actions = courant.type === "simple" ? [courant.a] : courant.type === "comparer" ? [courant.a, courant.b] : [];
+  const ajoutees = [];
+  for (const a of actions) if (await ajouterAuSuivi(a)) ajoutees.push(a.ticker);
+  $("message-export").textContent = ajoutees.length ? `${ajoutees.join(" et ")} ajouté${ajoutees.length > 1 ? "s" : ""} à la liste de suivi.` : "Déjà suivie.";
+});
+
+// ---------------------------------------------------------------------------
+// Filtre d'actions (screener)
+// ---------------------------------------------------------------------------
+let baseFiltre = null, triFiltre = { col: "capi_eur", sens: -1 }, selectionFiltre = [];
+const PROFILS = {
+  tous: {}, rendement: { rdt_min: 4, levier_max: 3, capi_min: 2 }, valeur: { per_max: 12, capi_min: 2 },
+  qualite: { roe_min: 15, marge_min: 10, levier_max: 2, capi_min: 2 }, croissance: { croiss_min: 15, capi_min: 2 },
+};
+const COLONNES_F = [["ticker", "Action", ""], ["secteur", "Secteur", ""], ["capi_eur", "Capi. (Md €)", "md"], ["per", "PER", "x"],
+  ["rdt_div", "Rendement", "%"], ["roe", "ROE", "%"], ["marge_nette", "Marge nette", "%"], ["levier", "Dette nette / EBE", "x"],
+  ["croissance_ca", "Croissance CA", "%"], ["potentiel_analystes", "Objectif analystes", "%"]];
+async function chargerFiltre() {
+  if (baseFiltre) return filtrer();
+  for (let i = 0; i < 200; i++) {
+    let d; try { d = await (await fetch("/api/filtre")).json(); } catch { break; }
+    if (d.actions) {
+      baseFiltre = d.actions;
+      const secteurs = [...new Set(baseFiltre.map(a => a.secteur).filter(Boolean))].sort();
+      $("sc-secteur").innerHTML = `<option value="">Tous</option>` + secteurs.map(x => `<option>${echapper(x)}</option>`).join("");
+      return filtrer();
+    }
+    $("sc-resultats").innerHTML = `<p class="note-a">Première utilisation : téléchargement des ratios de ${d.total || "~1 500"} entreprises
+      (${d.faits || 0} faites). Cela prend une à quelques minutes, une seule fois par jour…</p>`;
+    await new Promise(r => setTimeout(r, 3000));
+  }
+}
+function valeurCritere(c) { const el = document.querySelector(`#sc-champs input[data-c="${c}"]`); return el && el.value !== "" ? +el.value : null; }
+function filtrer() {
+  if (!baseFiltre) return;
+  const m = $("sc-marche").value, sect = $("sc-secteur").value, v = valeurCritere;
+  const ok = (x, min, max) => x != null && (min == null || x >= min) && (max == null || x <= max);
+  let res = baseFiltre.filter(a =>
+    (!m || (m === "us" ? a.place === "S&P 500" : m === "eu" ? a.place !== "S&P 500" : a.place === m)) &&
+    (!sect || a.secteur === sect) &&
+    (v("capi_min") == null || (a.capi_eur || 0) >= v("capi_min") * 1e9) &&
+    (v("per_max") == null || ok(a.per, 0, v("per_max"))) &&
+    (v("rdt_min") == null || ok(a.rdt_div, v("rdt_min") / 100, null)) &&
+    (v("roe_min") == null || ok(a.roe, v("roe_min") / 100, null)) &&
+    (v("marge_min") == null || ok(a.marge_nette, v("marge_min") / 100, null)) &&
+    (v("levier_max") == null || ok(a.levier, null, v("levier_max"))) &&
+    (v("croiss_min") == null || ok(a.croissance_ca, v("croiss_min") / 100, null)));
+  const c = triFiltre.col;
+  res.sort((x, y) => { const a = x[c], b = y[c]; if (a == null) return 1; if (b == null) return -1;
+    return (typeof a === "string" ? a.localeCompare(b) : a - b) * triFiltre.sens; });
+  $("sc-compte").textContent = `${res.length} entreprise${res.length > 1 ? "s" : ""} sur ${baseFiltre.length}` + (res.length > 150 ? " (150 premières affichées)" : "");
+  const f = (x, t) => x == null ? "—" : t === "%" ? pctTxt(x).replace("+", "") : t === "md" ? fr(x / 1e9, 0) : fr(x, 1);
+  $("sc-resultats").innerHTML = `<table class="t-a t-filtre"><tr><th></th>${COLONNES_F.map(([k, l, t]) =>
+      `<th data-k="${k}" class="${t ? "num" : ""}">${l}${triFiltre.col === k ? (triFiltre.sens > 0 ? " ▲" : " ▼") : ""}</th>`).join("")}<th></th></tr>` +
+    res.slice(0, 150).map(a => `<tr class="cliquable" data-t="${echapper(a.ticker)}" data-n="${echapper(a.nom)}" data-p="${echapper(a.place)}">
+      <td><input type="checkbox" class="sel" ${selectionFiltre.includes(a.ticker) ? "checked" : ""}></td>
+      <td><span class="tk">${echapper(a.ticker)}</span> ${echapper(a.nom)}</td><td>${echapper(a.secteur || "")}</td>
+      ${COLONNES_F.slice(2).map(([k, , t]) => `<td class="num">${f(a[k], t)}</td>`).join("")}
+      <td><button class="plus" title="Ajouter au portefeuille" aria-label="Ajouter au portefeuille">+</button></td></tr>`).join("") + "</table>";
+}
+$("sc-champs").addEventListener("input", () => { $("sc-profils").querySelectorAll("button").forEach(b => b.classList.remove("on")); filtrer(); });
+$("sc-marche").addEventListener("change", filtrer);
+$("sc-secteur").addEventListener("change", filtrer);
+$("sc-profils").addEventListener("click", (e) => {
+  const b = e.target.closest("button"); if (!b) return;
+  const p = PROFILS[b.dataset.p];
+  document.querySelectorAll("#sc-champs input[data-c]").forEach(i => i.value = p[i.dataset.c] ?? "");
+  $("sc-profils").querySelectorAll("button").forEach(x => x.classList.toggle("on", x === b));
+  filtrer();
+});
+$("sc-resultats").addEventListener("click", (e) => {
+  const th = e.target.closest("th[data-k]");
+  if (th) { triFiltre = { col: th.dataset.k, sens: triFiltre.col === th.dataset.k ? -triFiltre.sens : -1 }; return filtrer(); }
+  const tr = e.target.closest("tr.cliquable"); if (!tr) return;
+  const a = { ticker: tr.dataset.t, nom: tr.dataset.n, place: tr.dataset.p };
+  if (e.target.matches(".sel")) {
+    selectionFiltre = e.target.checked ? [...selectionFiltre.filter(t => t !== a.ticker), a.ticker].slice(-2)
+                                       : selectionFiltre.filter(t => t !== a.ticker);
+    $("sc-comparer").disabled = selectionFiltre.length !== 2;
+    return filtrer();
+  }
+  if (e.target.closest(".plus")) { ajouterAuPf(a); e.target.textContent = "✓"; return; }
+  document.querySelector('#mode button[data-m="simple"]').click();
+  lancerAnalyse(a, false);
+});
+$("sc-comparer").addEventListener("click", () => {
+  const [t1, t2] = selectionFiltre, trouve = t => baseFiltre.find(a => a.ticker === t) || { ticker: t, nom: t, place: "" };
+  comparerDepuis(trouve(t1), trouve(t2));
+});
+
+// Comparaison demandée depuis un rapport (bouton « Comparer » de la section Concurrents) ou le filtre
+function comparerDepuis(a, b) {
+  document.querySelector('#mode button[data-m="comparer"]').click();
+  R[1].champ.value = libelle(a); choix[1] = a;
+  R[2].champ.value = libelle(b); choix[2] = b;
+  majBouton();
+  lancerComparaison(false);
+}
+window.addEventListener("message", (e) => {
+  const d = e.data || {};
+  if (d.type !== "comparer" || !d.t1 || !d.t2) return;
+  const info = t => ACTIONS.find(a => a.ticker === t) || { ticker: t, nom: t, place: "" };
+  comparerDepuis(info(d.t1), info(d.t2));
+});
+
+// ---------------------------------------------------------------------------
+// Économie (macro)
+// ---------------------------------------------------------------------------
+let macroDonnees = null, macroTheme = "inflation", macroPeriode = 20;
+const COULEURS_M = ["var(--accent)", "var(--orange)", "var(--eu)", "#8a63d2"];
+async function chargerMacro() {
+  if (!macroDonnees) {
+    try {
+      const d = await (await fetch("/api/macro")).json();
+      if (!Array.isArray(d)) throw 0;
+      macroDonnees = d;
+    } catch { $("macro-contenu").innerHTML = `<p class="erreur">Données indisponibles (connexion internet ?).</p>`; return; }
+  }
+  $("macro-onglets").innerHTML = macroDonnees.map(t => `<button data-t="${t.id}" class="${t.id === macroTheme ? "on" : ""}">${echapper(t.titre)}</button>`).join("")
+    + `<button data-t="courbe" class="${macroTheme === "courbe" ? "on" : ""}">Courbe des taux</button>`
+    + `<button data-t="calendrier" class="${macroTheme === "calendrier" ? "on" : ""}">Calendrier</button>`;
+  if (macroTheme === "courbe") return afficherCourbeTaux();
+  if (macroTheme === "calendrier") return afficherCalendrier();
+  afficherMacro();
+}
+$("macro-onglets").addEventListener("click", (e) => { const b = e.target.closest("button"); if (!b) return; macroTheme = b.dataset.t; chargerMacro(); });
+function afficherMacro() {
+  const t = macroDonnees.find(x => x.id === macroTheme) || macroDonnees[0];
+  const debut = macroPeriode ? new Date(new Date().setFullYear(new Date().getFullYear() - macroPeriode)) : new Date(0);
+  const series = {};
+  t.series.forEach(s => { series[s.nom] = s.points.filter(p => new Date(p[0]) >= debut); });
+  // la série la plus longue sert d'axe des dates
+  const ordre = Object.keys(series).sort((a, b) => new Date(series[a][0][0]) - new Date(series[b][0][0]));
+  const triees = Object.fromEntries(ordre.map(n => [n, series[n]]));
+  const couleurs = ordre.map(n => COULEURS_M[t.series.findIndex(s => s.nom === n)]);
+  $("macro-contenu").innerHTML = `
+    <p class="aide">${echapper(t.aide)}</p>
+    <div class="cartes-macro">${t.series.map((s, j) => {
+      const d = s.il_y_a_1an == null ? null : s.dernier - s.il_y_a_1an;
+      return `<div style="--c:${COULEURS_M[j]}"><div class="l">${echapper(s.nom)}</div>
+        <div class="v">${fr(s.dernier, 2)} %</div>
+        <div class="s">${echapper(s.date)}${d == null ? "" : ` · il y a un an : ${fr(s.il_y_a_1an, 2)} % (${d >= 0 ? "+" : "−"}${fr(Math.abs(d), 2)} pt)`}</div></div>`; }).join("")}</div>
+    <div class="fictifs-tete"><div class="legende">${ordre.map((n, j) => `<span style="--c:${couleurs[j]}">${echapper(n)}</span>`).join("")}
+      ${t.repere != null ? `<span style="--c:var(--rouge)">${echapper(t.repere_nom)}</span>` : ""}</div>
+      <div class="segment periodes" id="macro-periodes">${[[5, "5 ans"], [10, "10 ans"], [20, "20 ans"], [0, "Tout"]].map(([v, l]) =>
+        `<button data-p="${v}" class="${v === macroPeriode ? "on" : ""}">${l}</button>`).join("")}</div></div>
+    <svg class="svg-courbes" id="macro-svg" viewBox="0 0 1000 300" preserveAspectRatio="none"></svg>
+    <div class="lecture-s"><b>Ce qu'il faut retenir</b>${t.lecture.map(x => `<p>${echapper(x)}</p>`).join("")}</div>
+    <p class="note-a">${echapper(t.unite)} · Données mensuelles ou trimestrielles, publiées avec quelques semaines de décalage.</p>`;
+  courbes($("macro-svg"), triees, couleurs, null, { unite: " %", decimales: 1, depuisZero: false, repere: t.repere, mois: true, pointilles: false });
+  $("macro-periodes").addEventListener("click", (e) => { const b = e.target.closest("button"); if (!b) return; macroPeriode = +b.dataset.p; afficherMacro(); });
+}
+
+// ---------------------------------------------------------------------------
+// Bourse fictive
+// ---------------------------------------------------------------------------
+let fxCourant = null, fxDetail = null, fxAction = null, fxSens = "achat";
+const euros = (x, d = 0) => (x == null || isNaN(x)) ? "—" : `${fr(x, d)} €`;
+$("fx-date").value = new Date().toISOString().slice(0, 10);
+$("fx-date").max = new Date().toISOString().slice(0, 10);
+
+async function chargerFictifs() {
+  $("fx-liste").innerHTML = `<p class="note-a">Chargement…</p>`;
+  let l = [];
+  try { l = await (await fetch("/api/fictifs")).json(); } catch {}
+  if (!Array.isArray(l) || !l.length) {
+    $("fx-liste").innerHTML = `<div class="pf-vide">Aucun portefeuille fictif pour l'instant : crée le premier ci-dessous.</div>`;
+    $("fx-creation").open = true; $("fx-detail").innerHTML = ""; return;
+  }
+  $("fx-liste").innerHTML = `<table class="t-pf"><thead><tr><th>Portefeuille</th><th>Départ</th><th>Capital</th><th>Valeur</th>
+      <th>Performance</th><th title="Performance du portefeuille moins celle du CAC 40 sur la même période">vs CAC 40</th><th>Lignes</th></tr></thead><tbody>` +
+    l.map((p, i) => `<tr class="cliquable" data-id="${p.id}"${p.id === fxCourant ? ' style="background:var(--accent-doux)"' : ""}>
+      <td><b>${i === 0 && l.length > 1 ? "🏆 " : ""}${echapper(p.nom)}</b></td><td>${new Date(p.date_creation).toLocaleDateString("fr-FR")}</td>
+      <td>${euros(p.capital)}</td><td>${p.erreur ? "—" : euros(p.valeur)}</td>
+      <td class="${sens(p.performance)}">${p.erreur ? echapper(p.erreur) : pctTxt(p.performance)}</td>
+      <td class="${sens(p.vs_cac)}">${p.vs_cac == null ? "—" : pctTxt(p.vs_cac)}</td><td>${p.nb_positions ?? "—"}</td></tr>`).join("") + "</tbody></table>";
+  if (!fxCourant || !l.some(p => p.id === fxCourant)) fxCourant = l[0].id;
+  chargerDetailFictif();
+}
+$("fx-liste").addEventListener("click", (e) => { const tr = e.target.closest("tr[data-id]"); if (!tr) return; fxCourant = tr.dataset.id; chargerFictifs(); });
+$("fx-creer").addEventListener("click", async () => {
+  const r = await fetch("/api/fictifs", { method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ nom: $("fx-nom").value, capital: $("fx-capital").value, date_creation: $("fx-date").value, frais_pct: $("fx-frais").value }) });
+  const d = await r.json();
+  if (d.erreur) return alert(d.erreur);
+  fxCourant = d.id; $("fx-creation").open = false; chargerFictifs();
+});
+
+async function chargerDetailFictif() {
+  $("fx-detail").innerHTML = `<p class="note-a">Calcul de la valeur du portefeuille…</p>`;
+  try {
+    fxDetail = await (await fetch(`/api/fictifs/${fxCourant}`)).json();
+    if (fxDetail.erreur) throw new Error(fxDetail.erreur);
+  } catch (e) { $("fx-detail").innerHTML = `<p class="erreur">${echapper(e.message || "Erreur")}</p>`; return; }
+  const p = fxDetail, refs = p.references || {};
+  const dernierJour = [p.date_creation, ...p.transactions.map(t => t.date)].sort().pop();
+  const auj = new Date().toISOString().slice(0, 10);
+  $("fx-detail").innerHTML = `
+    <div class="fictifs-tete"><h2 style="margin:18px 0 0">${echapper(p.nom)}</h2>
+      <span class="note-a">créé le ${new Date(p.date_creation).toLocaleDateString("fr-FR")} · frais ${fr(p.frais_pct, 2)} % (min. ${euros(p.frais_min)})
+      · <button class="lien" id="fx-supprimer" style="color:var(--rouge)">Supprimer</button></span></div>
+    <div class="kpis-s">
+      <div><div class="l">Valeur totale</div><div class="v">${euros(p.valeur)}</div></div>
+      <div><div class="l">Performance</div><div class="v ${sens(p.performance)}">${pctTxt(p.performance)}</div></div>
+      <div><div class="l">Liquidités</div><div class="v">${euros(p.cash)}</div></div>
+      <div><div class="l">Plus-values latentes</div><div class="v ${sens(p.plus_value_latente)}">${euros(p.plus_value_latente)}</div></div>
+      <div><div class="l">Plus-values réalisées</div><div class="v ${sens(p.plus_value_realisee)}">${euros(p.plus_value_realisee)}</div></div>
+      <div><div class="l">Dividendes reçus</div><div class="v">${euros(p.dividendes)}</div></div>
+      ${Object.entries(refs).map(([n, r]) => `<div><div class="l">${echapper(n)} (même période)</div><div class="v ${sens(r.performance)}">${pctTxt(r.performance)}</div></div>`).join("")}
+    </div>
+    <div class="ordre">
+      <b>Passer un ordre</b>
+      <div class="champs">
+        <label>Action<input id="fx-action" readonly placeholder="Utilise la barre de recherche en haut" value="${fxAction ? echapper(libelle(fxAction)) : ""}"></label>
+        <div class="segment sens"><button class="achat ${fxSens === "achat" ? "on" : ""}" data-s="achat">Acheter</button><button class="vente ${fxSens === "vente" ? "on" : ""}" data-s="vente">Vendre</button></div>
+        <label>Quantité<input id="fx-qte" type="number" min="1" step="1" placeholder="nombre d'actions"></label>
+        <label>ou montant (€)<input id="fx-montant" type="number" min="0" step="100" placeholder="ex. 1000"></label>
+        <label title="Aujourd'hui = dernier cours ; date passée = cours de clôture de ce jour">Date<input id="fx-jour" type="date" min="${dernierJour}" max="${auj}" value="${auj >= dernierJour ? auj : dernierJour}"></label>
+        <button class="bouton" id="fx-passer">Valider l'ordre</button>
+      </div>
+      <div id="fx-apercu" class="note-a"></div><div id="fx-message"></div>
+      ${p.transactions.length ? `<button class="lien" id="fx-annuler">Annuler le dernier ordre</button>` : ""}
+    </div>
+    <h3>Positions</h3>
+    ${p.positions.length ? `<table class="t-pf"><thead><tr><th>Action</th><th>Quantité</th><th title="Prix de revient unitaire, frais compris">PRU</th><th>Cours</th>
+      <th>Valeur</th><th>Plus-value</th><th>Poids</th><th></th></tr></thead><tbody>` +
+      p.positions.map(x => `<tr><td><span class="tk">${echapper(x.ticker)}</span> ${echapper(x.nom)}</td><td>${fr(x.quantite, 0)}</td>
+        <td>${euros(x.pru_eur, 2)}</td><td>${euros(x.cours_eur, 2)}</td><td>${euros(x.valeur)}</td>
+        <td class="${sens(x.plus_value)}">${euros(x.plus_value)} (${pctTxt(x.performance)})</td><td>${pctTxt(x.poids, 0).replace("+", "")}</td>
+        <td><button class="lien" data-vendre="${echapper(x.ticker)}" data-n="${echapper(x.nom)}" data-q="${x.quantite}">Tout vendre</button></td></tr>`).join("") + "</tbody></table>"
+      : `<p class="note-a">Aucune action pour l'instant : choisis-en une avec la barre de recherche, puis « Valider l'ordre ».</p>`}
+    <h3>Évolution</h3>
+    <div class="legende">${Object.keys(p.series).map((n, j) => `<span style="--c:${["var(--accent)", "var(--doux)", "var(--orange)"][j]}">${echapper(n)}</span>`).join("")}</div>
+    <svg class="svg-courbes" id="fx-svg" viewBox="0 0 1000 300" preserveAspectRatio="none"></svg>
+    <p class="note-a">Indices ramenés au même capital de départ. Performance ${p.performance_annualisee != null ? `annualisée : ${pctTxt(p.performance_annualisee)} · ` : ""}
+      perte maximale : ${pctTxt(p.perte_max)} · frais payés : ${euros(p.frais, 2)}.</p>
+    <div class="grille-2">
+      <div><h3>Historique des ordres</h3><ul class="agenda">${p.transactions.map(t => `<li><span class="d">${new Date(t.date).toLocaleDateString("fr-FR")}</span>
+        <span><b class="${t.sens === "achat" ? "hausse" : "baisse"}">${t.sens === "achat" ? "Achat" : "Vente"}</b> ${fr(t.quantite, 0)} × ${echapper(t.ticker)} à ${fr(t.prix, 2)} ${echapper(t.devise)}
+        <span class="t">= ${euros(t.montant_eur, 2)} + ${euros(t.frais_eur, 2)} de frais</span></span></li>`).join("") || "<li>Aucun ordre.</li>"}</ul></div>
+      <div><h3>Dividendes encaissés</h3><ul class="agenda">${p.dividendes_detail.map(d => `<li><span class="d">${d.date}</span><span>${echapper(d.ticker)} : ${euros(d.montant_eur, 2)}</span></li>`).join("") || "<li>Aucun pour l'instant.</li>"}</ul></div>
+    </div>`;
+  if (Object.values(p.series)[0]?.length > 1) courbes($("fx-svg"), p.series, ["var(--accent)", "var(--doux)", "var(--orange)"]);
+  else $("fx-svg").outerHTML = `<p class="note-a">Le graphique apparaîtra après la première séance de Bourse.</p>`;
+  brancherOrdre();
+}
+
+function choisirActionOrdre(a) {
+  fxAction = { ticker: a.ticker, nom: a.nom, place: a.place };
+  if ($("fx-action")) { $("fx-action").value = libelle(fxAction); apercuOrdre(); }
+}
+async function apercuOrdre() {
+  if (!fxAction || !$("fx-apercu")) return;
+  $("fx-apercu").textContent = "Cours en cours de récupération…";
+  try {
+    const c = await (await fetch(`/api/cotation/${encodeURIComponent(fxAction.ticker)}?date=${$("fx-jour").value}`)).json();
+    if (c.erreur) throw new Error(c.erreur);
+    const q = +$("fx-qte").value || (+$("fx-montant").value ? Math.floor(+$("fx-montant").value / c.prix_eur) : 0);
+    const brut = q * c.prix_eur, frais = q ? Math.max(brut * fxDetail.frais_pct / 100, fxDetail.frais_min) : 0;
+    $("fx-apercu").innerHTML = `Cours : <b>${fr(c.prix, 2)} ${echapper(c.devise)}</b>${c.devise !== "EUR" ? ` (${euros(c.prix_eur, 2)})` : ""} · ${echapper(c.quand)}` +
+      (q ? ` · ${fxSens === "achat" ? "coût" : "produit"} estimé : ${fr(q, 0)} × ${euros(c.prix_eur, 2)} ${fxSens === "achat" ? "+" : "−"} ${euros(frais, 2)} de frais = <b>${euros(fxSens === "achat" ? brut + frais : brut - frais, 2)}</b>` : "");
+  } catch (e) { $("fx-apercu").textContent = e.message || "Cours indisponible."; }
+}
+function brancherOrdre() {
+  ["fx-qte", "fx-montant", "fx-jour"].forEach(id => $(id).addEventListener("change", apercuOrdre));
+  $("fx-qte").addEventListener("input", () => { if ($("fx-qte").value) $("fx-montant").value = ""; });
+  $("fx-montant").addEventListener("input", () => { if ($("fx-montant").value) $("fx-qte").value = ""; });
+  document.querySelectorAll("#fx-detail .sens button").forEach(b => b.addEventListener("click", () => {
+    fxSens = b.dataset.s; document.querySelectorAll("#fx-detail .sens button").forEach(x => x.classList.toggle("on", x === b)); apercuOrdre(); }));
+  $("fx-passer").addEventListener("click", async () => {
+    const msg = $("fx-message");
+    if (!fxAction) { msg.className = "err"; msg.textContent = "Choisis d'abord une action avec la barre de recherche."; return; }
+    msg.className = ""; msg.textContent = "Exécution…";
+    const r = await fetch(`/api/fictifs/${fxCourant}/ordre`, { method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ sens: fxSens, ticker: fxAction.ticker, nom: fxAction.nom, quantite: $("fx-qte").value, montant: $("fx-montant").value, date: $("fx-jour").value }) });
+    const d = await r.json();
+    if (d.erreur) { msg.className = "err"; msg.textContent = d.erreur; return; }
+    await chargerFictifs();
+    const m = $("fx-message"); m.className = "ok";
+    m.textContent = `Ordre exécuté : ${d.sens === "achat" ? "achat" : "vente"} de ${fr(d.quantite, 0)} ${d.ticker} à ${fr(d.prix, 2)} ${d.devise} (${d.quand}).`;
+  });
+  $("fx-annuler")?.addEventListener("click", async () => {
+    if (!confirm("Annuler le dernier ordre de ce portefeuille ?")) return;
+    await fetch(`/api/fictifs/${fxCourant}/annuler`, { method: "POST" }); chargerFictifs();
+  });
+  $("fx-supprimer").addEventListener("click", async () => {
+    if (!confirm(`Supprimer définitivement « ${fxDetail.nom} » ?`)) return;
+    await fetch(`/api/fictifs/${fxCourant}`, { method: "DELETE" }); fxCourant = null; chargerFictifs();
+  });
+  document.querySelectorAll("#fx-detail [data-vendre]").forEach(b => b.addEventListener("click", () => {
+    choisirActionOrdre({ ticker: b.dataset.vendre, nom: b.dataset.n, place: "" });
+    fxSens = "vente"; document.querySelectorAll("#fx-detail .sens button").forEach(x => x.classList.toggle("on", x.dataset.s === "vente"));
+    $("fx-qte").value = b.dataset.q; $("fx-montant").value = ""; apercuOrdre();
+    $("fx-passer").scrollIntoView({ block: "center" });
+  }));
+  if (fxAction) apercuOrdre();
+}
+
+chargerSuivi(); chargerPresets();
+chargerPf().then(() => { chargerPhares(); chargerPalmares(); });
+chargerIndices(); chargerActus();
+setInterval(() => { if ($("accueil").style.display !== "none") { chargerIndices(); chargerActus(); } }, 5 * 60 * 1000);
+R[1].champ.focus();
+</script>
+<script src="pro.js"></script>
+</body>
+</html>

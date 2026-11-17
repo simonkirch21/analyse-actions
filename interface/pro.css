@@ -1,0 +1,147 @@
+/* =====================================================================
+   Outils « pro » : navigation, barre de commandes, graphique interactif,
+   carte du marché, marchés, options, accueil personnalisable.
+   Utilise les variables du thème défini dans index.html.
+   ===================================================================== */
+
+/* Navigation en deux groupes */
+.modes-groupes { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.modes-groupes .segment button { padding: 7px 11px; font-size: 13.5px; }
+.bouton-cmd { font: inherit; font-size: 13px; padding: 7px 12px; border-radius: 10px; cursor: pointer;
+  border: 1px solid var(--bord); background: var(--carte); color: var(--doux); font-family: var(--mono); }
+.bouton-cmd span { font-family: -apple-system, sans-serif; margin-left: 4px; }
+.bouton-cmd:hover { border-color: var(--or); color: var(--texte); }
+
+/* ---------- Barre de commandes ---------- */
+.cmd-fond { position: fixed; inset: 0; z-index: 100; background: rgba(4, 7, 14, .62); backdrop-filter: blur(3px);
+  display: flex; justify-content: center; align-items: flex-start; padding-top: 12vh; }
+.cmd-fond[hidden] { display: none; }
+.cmd { width: min(680px, 92vw); background: var(--carte); border: 1px solid var(--bord); border-radius: 16px;
+  box-shadow: 0 24px 80px rgba(0,0,0,.55); overflow: hidden; animation: apparait var(--rapide) var(--ease); }
+.cmd input { width: 100%; border: 0; outline: none; background: transparent; color: var(--texte);
+  font: 18px var(--mono); padding: 18px 20px; border-bottom: 1px solid var(--bord); }
+.cmd input::placeholder { font-family: -apple-system, sans-serif; font-size: 15px; color: var(--doux); }
+.cmd-liste { max-height: 52vh; overflow-y: auto; padding: 6px; }
+.cmd-item { display: grid; grid-template-columns: 150px 1fr auto; gap: 12px; align-items: center; padding: 9px 12px;
+  border-radius: 9px; cursor: pointer; font-size: 14px; }
+.cmd-item.actif { background: var(--survol); }
+.cmd-item .c { font-family: var(--mono); color: var(--or); font-weight: 600; font-size: 13px; }
+.cmd-item .d { color: var(--texte); } .cmd-item .x { color: var(--doux); font-size: 12px; }
+.cmd-groupe { padding: 8px 12px 4px; font-size: 11px; color: var(--doux); text-transform: uppercase; letter-spacing: .08em; }
+.cmd-pied { display: flex; gap: 18px; padding: 9px 16px; border-top: 1px solid var(--bord); font-size: 12px; color: var(--doux); }
+
+/* ---------- Graphique interactif ---------- */
+.gp-outils { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin: 12px 0 6px; }
+.gp-outils .presets { margin: 0; }
+.gp-comp { font-size: 13px; color: var(--doux); display: flex; gap: 6px; align-items: center; }
+.gp-comp input { font: 13px var(--mono); padding: 6px 9px; border-radius: 8px; border: 1px solid var(--bord);
+  background: var(--fond); color: var(--texte); text-transform: uppercase; }
+.gp-comp-tag { display: inline-flex; gap: 6px; align-items: center; margin-right: 8px; font-family: var(--mono); font-size: 12px; }
+.gp-comp-tag i { width: 10px; height: 3px; border-radius: 2px; display: inline-block; }
+.gp-comp-tag button { border: 0; background: none; color: var(--doux); cursor: pointer; }
+.gp-zone { position: relative; border: 1px solid var(--bord); border-radius: 12px; overflow: hidden; background: var(--carte); }
+#gp-canvas { display: block; width: 100%; height: 480px; cursor: crosshair; touch-action: none; }
+.gp-info { position: absolute; left: 12px; top: 10px; font: 12px var(--mono); color: var(--texte); pointer-events: none;
+  background: color-mix(in srgb, var(--carte) 82%, transparent); padding: 4px 8px; border-radius: 6px; }
+.gp-info span { margin-right: 10px; } .gp-info .l { color: var(--doux); }
+
+/* ---------- Carte du marché ---------- */
+.carte-legende { display: flex; align-items: center; gap: 8px; margin: 10px 0; font: 12px var(--mono); color: var(--doux); }
+.carte-legende .degrade { width: 180px; height: 10px; border-radius: 99px;
+  background: linear-gradient(90deg, #C23B3B, #4A2330 40%, #1A2236 50%, #1C4A38 60%, #2FA36F); }
+.carte-zone { position: relative; height: 620px; border-radius: 12px; overflow: hidden; background: var(--fond); }
+.carte-zone.mini { height: 320px; }
+.tm-secteur { position: absolute; outline: 2px solid var(--fond); outline-offset: -1px; }
+.tm-secteur > .tm-nom { position: absolute; left: 4px; top: 2px; z-index: 2; font-size: 10.5px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .06em; color: rgba(236,232,223,.85); pointer-events: none;
+  text-shadow: 0 1px 2px rgba(0,0,0,.6); white-space: nowrap; overflow: hidden; max-width: 96%; }
+.tm-case { position: absolute; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  border: 1px solid var(--fond); cursor: pointer; overflow: hidden; text-align: center; color: #F4F1EA;
+  transition: filter var(--rapide) var(--ease), transform var(--rapide) var(--ease); }
+.tm-case:hover { filter: brightness(1.25); z-index: 3; }
+.tm-case b { font: 600 13px var(--mono); line-height: 1.2; } .tm-case span { font: 11px var(--mono); opacity: .9; }
+.tm-case.petit b { font-size: 10px; } .tm-case.petit span { display: none; }
+.tm-case.minuscule b { display: none; }
+.tm-bulle { position: fixed; z-index: 50; pointer-events: none; background: var(--carte); border: 1px solid var(--bord);
+  border-radius: 10px; padding: 8px 11px; font-size: 13px; box-shadow: var(--ombre); }
+
+/* ---------- Marchés (devises, matières premières, crypto) ---------- */
+.groupe-actifs h3 { margin: 18px 0 8px; font-size: 16px; }
+
+/* ---------- Options ---------- */
+.op-tete { display: flex; gap: 14px; flex-wrap: wrap; align-items: flex-end; margin: 8px 0; }
+.t-options { width: 100%; border-collapse: collapse; font: 12.5px var(--mono); }
+.t-options th { color: var(--doux); font: 600 11px -apple-system, sans-serif; text-transform: uppercase; letter-spacing: .05em;
+  padding: 6px; border-bottom: 1px solid var(--bord); text-align: right; }
+.t-options td { padding: 5px 6px; text-align: right; border-bottom: 1px solid var(--bord); }
+.t-options td.k { text-align: center; font-weight: 700; color: var(--or); background: var(--or-doux); }
+.t-options td.itm { background: color-mix(in srgb, var(--accent) 7%, transparent); }
+.t-options tr.atm td { border-top: 2px solid var(--or); }
+.t-options .sep { border-left: 1px solid var(--bord); }
+
+/* ---------- Courbe des taux et calendrier ---------- */
+.cal-filtres { display: flex; gap: 10px; flex-wrap: wrap; margin: 8px 0 12px; }
+.cal-jour { margin: 16px 0 6px; font: 600 15px var(--serif); color: var(--or); }
+.cal-ligne { display: grid; grid-template-columns: 56px 150px 1fr 70px 110px 110px; gap: 10px; align-items: center;
+  padding: 7px 4px; border-bottom: 1px solid var(--bord); font-size: 13.5px; }
+.cal-ligne .h { font-family: var(--mono); color: var(--doux); }
+.cal-ligne .v { font-family: var(--mono); text-align: right; color: var(--doux); }
+.cal-ligne .v b { color: var(--texte); font-weight: 500; }
+.imp { letter-spacing: 2px; color: var(--bord); } .imp .o { color: var(--or); } .imp .r { color: var(--rouge); }
+@media (max-width: 900px) { .cal-ligne { grid-template-columns: 50px 1fr 60px; } .cal-ligne .p, .cal-ligne .v { display: none; } }
+
+/* ---------- Accueil personnalisable ---------- */
+.perso-bouton { display: block; margin: 0 0 6px auto; font-size: 13px; padding: 6px 12px; }
+.perso-panneau { background: var(--carte); border: 1px solid var(--bord); border-radius: 14px; padding: 12px 16px; margin: 10px 0;
+  box-shadow: var(--ombre); }
+.perso-panneau li { display: flex; align-items: center; gap: 10px; padding: 6px 0; border-bottom: 1px solid var(--bord); list-style: none; }
+.perso-panneau ul { padding: 0; margin: 6px 0; }
+.perso-panneau li span { flex: 1; } .perso-panneau button { font-size: 13px; }
+.bloc-accueil[hidden] { display: none; }
+.mini-liste { list-style: none; margin: 0; padding: 0; }
+.mini-liste li { display: flex; justify-content: space-between; gap: 10px; padding: 7px 0; border-bottom: 1px solid var(--bord); font-size: 13.5px; }
+.mini-liste li:last-child { border-bottom: 0; }
+
+/* Écrans larges : toute la largeur de la fenêtre */
+#panneau-carte, #panneau-graphique, #panneau-options, #panneau-marches, #panneau-macro { max-width: none; margin-right: 32px; }
+
+/* =====================================================================
+   Finitions : règles d'interface de Vercel (Web Interface Guidelines)
+   et principes « Taste » adaptés à une application (un seul système,
+   retour visuel immédiat, accessibilité clavier).
+   ===================================================================== */
+
+/* Chiffres alignés en colonnes partout (cours, %, tableaux) */
+body { font-variant-numeric: tabular-nums; -webkit-tap-highlight-color: transparent; }
+h1, h2, h3, h4 { text-wrap: balance; }
+p, li, .note-a { text-wrap: pretty; }
+
+/* Focus clavier visible et cohérent (anneau or), uniquement à la navigation au clavier */
+:where(button, a, select, input, textarea, summary, [tabindex]):focus-visible {
+  outline: 2px solid var(--or); outline-offset: 2px; border-radius: 8px;
+}
+.recherche input:focus-visible, .cmd input:focus-visible { outline: none; }  /* déjà signalés par leur bordure */
+.cmd input:focus-visible { box-shadow: inset 0 -2px 0 var(--or); }
+tr[tabindex]:focus-visible { outline-offset: -2px; }
+tr[tabindex]:focus-visible td { background: var(--survol); }
+.tm-case:focus-visible { outline-offset: -3px; z-index: 4; filter: brightness(1.25); }
+
+/* Boutons : réagissent au survol et s'enfoncent au clic (transform + opacity uniquement) */
+button, .bouton, .chip, .bouton-cmd { touch-action: manipulation; }
+button:not(:disabled), .bouton:not(:disabled), .chip {
+  transition: transform 120ms var(--ease), background-color var(--rapide) var(--ease),
+              border-color var(--rapide) var(--ease), color var(--rapide) var(--ease), opacity var(--rapide) var(--ease);
+}
+.bouton:not(:disabled):hover { filter: brightness(1.08); }
+button:not(:disabled):active, .bouton:not(:disabled):active, .chip:active { transform: scale(.97); }
+
+/* Cartes cliquables : légère élévation au survol */
+.indice { transition: border-color var(--rapide) var(--ease), transform var(--rapide) var(--ease); }
+.indice:hover { transform: translateY(-2px); }
+
+/* Listes déroulantes : pas de rebond qui fait défiler la page derrière */
+.cmd-liste, .suggestions, .cmd-fond { overscroll-behavior: contain; }
+
+@media (prefers-reduced-motion: reduce) {
+  .indice:hover, button:active, .bouton:active, .chip:active { transform: none; }
+}

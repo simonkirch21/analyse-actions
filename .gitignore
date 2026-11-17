@@ -1,0 +1,21 @@
+# Environnement Python (chacun le recrée avec requirements.txt)
+.venv/
+__pycache__/
+*.pyc
+
+# Données personnelles (portefeuille, suivi, portefeuilles fictifs)
+utilisateur/
+
+# Caches et fichiers générés
+rapports/
+*_p9.png
+calendrier.json
+
+# Application construite : le .dmg est publié dans les « Releases » GitHub
+distribution/
+build/
+dist/
+*.spec
+
+# macOS
+.DS_Store
