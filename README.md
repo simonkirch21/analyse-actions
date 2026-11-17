@@ -79,6 +79,23 @@ de ton compte) : ouvre-la depuis le Launchpad, Spotlight (Cmd+Espace) ou le Find
   sur 52 semaines), catalyseurs et risques. Les **chiffres clés sont cliquables** (« d'où vient ce chiffre ? ») :
   définition, calcul avec les chiffres de l'entreprise, repères et **rang dans le secteur** (≈ 1 350 entreprises).
   Bouton « Note PDF » : la note sur une page, avec ses sources.
+- Nouvelles sections de chaque rapport :
+  - **Publications de résultats** : BPA attendu et publié, surprise, réaction du cours le jour même (comparée à l'indice),
+    taux de publications au-dessus des attentes, le « paradoxe » (bons résultats mais cours en baisse), prochaine date.
+  - **Modèle à facteurs Fama-French** (5 facteurs + momentum, bibliothèque de Kenneth French) : l'« ADN de style »
+    de l'action (taille, value/croissance, rentabilité, investissement, momentum), alpha et R² comparés au CAPM.
+  - **Qualité des bénéfices** : conversion du bénéfice en trésorerie, accruals, M-score de Beneish détaillé,
+    poids du goodwill, dilution ou rachats d'actions.
+  - **Dividendes** : historique, croissance sur 5 et 10 ans, années de hausse, taux de distribution, mois de versement,
+    et 10 000 investis il y a 10 ans avec ou sans réinvestissement.
+- **Secteurs** : tableau de bord de chaque secteur (médianes, comparaison à l'ensemble, meilleures et moins bonnes
+  entreprises sur 8 critères, liste complète), filtre Europe / S&P 500.
+- **ETF** : frais (et leur coût sur 20 ans), contenu, secteurs, réplication, dividendes, éligibilité PEA, performance ;
+  comparaison de deux ETF (courbe en base 100, corrélation, lignes communes).
+- **Alertes techniques** dans la liste de suivi : passage de la moyenne 200 jours, croisement des moyennes 50/200,
+  RSI en zone de survente ou de surachat.
+- **Journal d'investissement** : thèse, ce qui ferait changer d'avis, prix visés ; rappelé en tête du rapport.
+- **Dividendes du portefeuille** : revenu annuel estimé (avant et après impôt) et calendrier mois par mois.
 - **Modèle DCF complet** (bouton DCF, ⌘K puis « DCF LVMH », ou depuis la section Valorisation d'un rapport) :
   projection sur 5 ans du chiffre d'affaires, de l'EBITDA, de l'impôt, des investissements et du BFR jusqu'au FCFF,
   chaque hypothèse modifiable (consensus des analystes pour la croissance à 1-2 ans) ; CMPC détaillé (bêta 5 ans
@@ -165,6 +182,13 @@ Chaque partie peut aussi être lancée seule (`.venv/bin/python partieN_xxx.py A
 | `calendrier.py` | Calendrier économique | flux public Forex Factory + Yahoo Finance |
 | `options_cotees.py` | Options cotées | chaîne Yahoo Finance, volatilité implicite |
 | `note_analyse.py` | Note d'analyse | fourchettes de valeur, football field, verdict, thèse, chiffres clés expliqués et rang sectoriel, note PDF d'une page |
+| `resultats.py` | Publications de résultats | surprises, réaction du cours |
+| `facteurs.py` | Modèle Fama-French | 5 facteurs + momentum, régression quotidienne |
+| `qualite.py` | Qualité des bénéfices | conversion en trésorerie, Beneish, goodwill, dilution |
+| `dividendes.py` | Dividendes | historique, croissance, réinvestissement, calendrier du portefeuille |
+| `secteurs.py` | Secteurs | médianes et classements à partir de la base fondamentale |
+| `etf.py` | ETF | analyse et comparaison de fonds indiciels |
+| `journal.py` | Journal d'investissement | notes par action |
 | `dcf_avance.py` | Modèle DCF complet | projection FCFF, deux valeurs terminales, scénarios, DCF inversé, sensibilités, classeur Excel en formules |
 | `interface/pro.js`, `pro.css` | Outils « pro » de l'interface | commandes, graphique, carte, marchés, options, accueil |
 | `export.py` | Exports | PDF (xhtml2pdf) et classeur Excel (openpyxl) |

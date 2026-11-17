@@ -500,6 +500,7 @@ CSS = """
 .na-tiroir .formule { font-family: var(--mono); font-size: 13px; background: var(--fond); border: 1px solid var(--bord);
   border-radius: 8px; padding: 10px; margin: 10px 0; line-height: 1.5; }
 .na-tiroir .lab { font-size: 11px; color: var(--doux); text-transform: uppercase; letter-spacing: .05em; margin-top: 14px; }
+.lien-secteur { color: var(--or); }
 .kpi[data-x] { cursor: pointer; } .kpi[data-x]:hover { border-color: var(--or); }
 @media (prefers-reduced-motion: reduce) { .na-tiroir, .na-cle { transition: none; } }
 """
@@ -558,7 +559,8 @@ def section_html(a: dict) -> str:
     # Chiffres clés
     h += ("<h3>Chiffres clés</h3><p class='note'>Clique sur un chiffre pour voir <b>d'où il vient</b> : sa définition, le calcul "
           "avec les chiffres de l'entreprise et sa place dans le secteur. Le repère gris au milieu de la barre est la médiane du "
-          f"secteur {e(n['secteur'])}.</p><div class='na-cles'>")
+          f"secteur <a href='#' class='lien-secteur' data-secteur='{e(n['secteur'], quote=True)}'>{e(n['secteur'])}</a> "
+          "(clique pour son tableau de bord).</p><div class='na-cles'>")
     for c in n["chiffres"]:
         h += (f"<button class='na-cle' data-x='{c['cle']}'><div class='l'>{e(c['nom'])}</div>"
               f"<div class='v'>{e(c['affichage'])}</div>{_barre(c['rang'])}</button>")
@@ -609,6 +611,8 @@ _JS = r"""
     if (b && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); ouvrir(b.dataset.x, b); }
   });
   document.getElementById('na-fermer').addEventListener('click', fermer);
+  document.querySelectorAll('.lien-secteur').forEach(a => a.addEventListener('click', e => {
+    e.preventDefault(); window.parent.postMessage({type: 'secteur', nom: a.dataset.secteur}, '*'); }));
 })();
 """
 

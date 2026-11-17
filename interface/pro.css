@@ -186,3 +186,61 @@ button:not(:disabled):active, .bouton:not(:disabled):active, .chip:active { tran
 .t-sens th { color: var(--doux); font-weight: 600; background: var(--carte); }
 .t-sens td.centre { outline: 2px solid var(--or); outline-offset: -2px; font-weight: 700; }
 .dcf-actions { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin: 24px 0 8px; }
+
+/* ---------- Journal d'investissement ---------- */
+.rappel-journal { margin: 8px 32px; padding: 9px 14px; border: 1px solid color-mix(in srgb, var(--or) 40%, var(--bord));
+  border-radius: 10px; background: var(--or-doux); font-size: 13.5px; }
+.rappel-journal[hidden] { display: none; }
+.tiroir-journal { position: fixed; top: 0; right: 0; bottom: 0; width: min(460px, 94vw); z-index: 60; background: var(--carte);
+  border-left: 1px solid var(--bord); box-shadow: -24px 0 70px rgba(0,0,0,.55); padding: 22px; overflow-y: auto;
+  transform: translateX(105%); transition: transform var(--normal) var(--ease); }
+.tiroir-journal.ouvert { transform: none; }
+.tiroir-journal[hidden] { display: none; }
+.fermer-j { position: absolute; right: 14px; top: 10px; border: 0; background: none; color: var(--doux); font-size: 24px; cursor: pointer; }
+.j-champ { display: block; font-size: 13.5px; margin: 14px 0 4px; }
+.j-champ textarea { display: block; width: 100%; margin-top: 6px; font: 14px/1.5 -apple-system, sans-serif; color: var(--texte);
+  background: var(--fond); border: 1px solid var(--bord); border-radius: 10px; padding: 10px; resize: vertical; }
+.j-prix { display: flex; gap: 14px; margin: 12px 0; flex-wrap: wrap; }
+.j-prix label { font-size: 13.5px; display: flex; flex-direction: column; gap: 4px; }
+.j-prix input { font: 14px var(--mono); padding: 7px 9px; border-radius: 8px; border: 1px solid var(--bord); background: var(--fond); color: var(--texte); width: 140px; }
+.j-actions { display: flex; gap: 12px; align-items: center; margin-top: 8px; }
+@media (prefers-reduced-motion: reduce) { .tiroir-journal { transition: none; } }
+
+/* ---------- Secteurs ---------- */
+#panneau-secteurs, #panneau-etf { max-width: none; margin-right: 32px; }
+.t-sect tbody tr.cliquable { cursor: pointer; } .t-sect tbody tr.cliquable:hover td, .t-sect tbody tr.cliquable:hover th { background: var(--survol); }
+.sect-univ { display: inline-flex; margin-left: 14px; vertical-align: middle; }
+.sect-classements { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 10px; }
+.carte-mini { background: var(--fond); border: 1px solid var(--bord); border-radius: 10px; padding: 10px 12px; font-size: 13px; }
+.carte-mini ul { list-style: none; margin: 6px 0 0; padding: 0; }
+.carte-mini li { display: flex; justify-content: space-between; gap: 8px; padding: 3px 0; }
+.carte-mini li b { font-family: var(--mono); font-weight: 500; }
+.carte-mini a { color: var(--texte); text-decoration: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.carte-mini a:hover { color: var(--or); }
+.cl-haut li::before { content: "▲"; color: var(--eu); font-size: 9px; margin-right: 4px; }
+.cl-bas { border-top: 1px dashed var(--bord); margin-top: 6px !important; padding-top: 4px !important; }
+.cl-bas li::before { content: "▼"; color: var(--rouge); font-size: 9px; margin-right: 4px; }
+.cl-haut li, .cl-bas li { justify-content: flex-start; } .carte-mini li b { margin-left: auto; }
+
+/* ---------- ETF ---------- */
+.etf-choix { display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap; }
+.etf-choix label { display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: var(--doux); }
+.etf-choix input { font: 14px var(--mono); padding: 9px 11px; border-radius: 10px; border: 1px solid var(--bord); background: var(--fond);
+  color: var(--texte); text-transform: uppercase; width: 190px; }
+.etf-populaires { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; margin: 12px 0; }
+.etf-grille { display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 16px; margin-top: 10px; }
+.etf-fiche { background: var(--fond); border: 1px solid var(--bord); border-top: 3px solid var(--c); border-radius: 12px; padding: 14px 16px; font-size: 13.5px; }
+.etf-fiche h3 { margin: 0; font-family: var(--mono); } .etf-nom { color: var(--doux); margin: 2px 0 10px; }
+.barre-s { display: grid; grid-template-columns: 170px 1fr 56px; align-items: center; gap: 8px; font-size: 12.5px; margin: 3px 0; }
+.barre-s i { display: block; height: 8px; border-radius: 99px; background: var(--c); opacity: .85; max-width: 100%; }
+.barre-s b { font: 500 12px var(--mono); text-align: right; }
+
+/* ---------- Dividendes du portefeuille ---------- */
+.div-pf { margin-top: 18px; border-top: 1px solid var(--bord); padding-top: 14px; }
+.cal-div { display: grid; grid-template-columns: repeat(12, 1fr); gap: 6px; align-items: end; height: 140px; margin: 12px 0 18px; }
+.cal-div div { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%; font-size: 11px; color: var(--doux); }
+.cal-div i { width: 70%; background: var(--or); border-radius: 4px 4px 0 0; min-height: 2px; }
+.cal-div b { font: 500 11px var(--mono); color: var(--texte); min-height: 14px; }
+
+/* Tuiles de chiffres : seul le cadre extérieur est encadré */
+.kpis-s > div div { background: none; border: 0; padding: 0; border-radius: 0; }

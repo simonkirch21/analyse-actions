@@ -105,7 +105,9 @@ def html_vers_pdf(page: str) -> bytes:
     polices = Path(matplotlib.get_data_path()) / "fonts" / "ttf"
     police = (f"@font-face {{ font-family: DejaVu; src: url('{polices / 'DejaVuSans.ttf'}'); }}"
               f"@font-face {{ font-family: DejaVu; font-weight: bold; src: url('{polices / 'DejaVuSans-Bold.ttf'}'); }}"
-              "body, td, th, p, li, div, span, b, h1, h2, h3 { font-family: DejaVu; }")
+              "body, td, th, p, li, div, span, b, h1, h2, h3 { font-family: DejaVu; }"
+              ".na-ff td, .na-chiffres div, .na-cle .v, .kpi .v, td.num { font-family: DejaVu; }")
+    p = p.replace("var(--mono)", "DejaVu").replace("var(--serif)", "DejaVu")   # polices de l'écran sans équivalent PDF
     p = p.replace("</style>", CSS_PDF + police + "</style>", 1)
     tampon = io.BytesIO()
     pisa.CreatePDF(p, dest=tampon, encoding="utf-8")

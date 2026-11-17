@@ -13,6 +13,7 @@ window.ouvertureModePro = function (m) {
   if (m === "carte") chargerCarte();
   if (m === "marches") chargerMarches();
   if (m === "dcf" && window.ouvertureDCF) ouvertureDCF();
+  if (window.ouvertureOutils2) ouvertureOutils2(m);
   if (m === "options" && !opEtat.ticker) $("op-contenu").innerHTML = `<p class="note-a">Exemples : Apple (AAPL), Nvidia (NVDA), Tesla (TSLA), Microsoft (MSFT).</p>`;
 };
 
@@ -517,6 +518,8 @@ const COMMANDES = [
   { c: "CAL", d: "Calendrier économique et résultats", x: "" },
   { c: "OPT AAPL", d: "Options cotées d'une action américaine", x: "" },
   { c: "DCF MC.PA", d: "Modèle DCF complet d'une action (scénarios, DCF inversé, Excel)", x: "DCF" },
+  { c: "SECT", d: "Tableau de bord des secteurs (médianes, classements)", x: "" },
+  { c: "ETF CW8.PA", d: "Analyser un ETF (frais, contenu, PEA), ou ETF A B pour comparer", x: "" },
   { c: "PF", d: "Mon portefeuille", x: "+ AAPL : ajouter au portefeuille" },
   { c: "SUIVI", d: "Liste de suivi et agenda", x: "SUIVRE AAPL : ajouter" },
   { c: "BF", d: "Bourse fictive", x: "ACHAT 10 AIR.PA · VENTE 5 AIR.PA" },
@@ -562,6 +565,8 @@ async function executerCmd(texte) {
   if (C === "CARTE") { const u = { CAC: "cac", EU: "eu", EURONEXT: "eu", SP: "sp", US: "sp" }[(args[0] || "CAC").toUpperCase()] || "cac";
     carteUnivers = u; $("carte-univers").querySelectorAll("button").forEach(x => x.classList.toggle("on", x.dataset.u === u)); return allerMode("carte"); }
   if (C === "G" || C === "GR" || C === "GRAPHIQUE") { const a = resoudre(args.join(" ")) || { ticker: "^FCHI", nom: "CAC 40" }; return ouvrirGraphique(a.ticker, a.nom); }
+  if (C === "SECT" || C === "SECTEURS") return allerMode("secteurs");
+  if (C === "ETF") { allerMode("etf"); if (args[0]) { $("etf-a").value = args[0].toUpperCase(); $("etf-b").value = (args[1] || "").toUpperCase(); chargerETF(); } return; }
   if (C === "DCF") { const a = resoudre(args.join(" ")); if (a) return ouvrirDCF(a.ticker, a.nom); return allerMode("dcf"); }
   if (C === "OPT" || C === "OPTIONS") { const a = resoudre(args.join(" ")); if (a) return chargerOptions(a.ticker, a.nom); return allerMode("options"); }
   if (C === "COMP" && args.length >= 2) return comparerDepuis(resoudre(args[0]), resoudre(args[1]));

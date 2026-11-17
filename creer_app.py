@@ -37,7 +37,7 @@ A_COPIER = ["partie1_donnees.py", "partie2_performance.py", "partie3_marche.py",
             "partie8_analyse_financiere.py", "interpretation_financiere.py",
             "partie9_valorisation.py", "interpretation_valorisation.py", "comparaison.py", "export.py",
             "portefeuille.py", "marche.py", "actualites.py", "chemins.py",
-            "simulateur.py", "suivi.py", "base_fondamentale.py", "macro.py", "fictifs.py", "taux.py", "calendrier.py", "options_cotees.py", "dcf_avance.py", "note_analyse.py",
+            "simulateur.py", "suivi.py", "base_fondamentale.py", "macro.py", "fictifs.py", "taux.py", "calendrier.py", "options_cotees.py", "dcf_avance.py", "note_analyse.py", "resultats.py", "qualite.py", "facteurs.py", "dividendes.py", "secteurs.py", "etf.py", "journal.py",
             "requirements.txt",
             "interface", "data"]
 

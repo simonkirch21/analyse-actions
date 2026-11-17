@@ -3,7 +3,8 @@ SUIVI — Liste de suivi, agenda (résultats, dividendes) et alertes
 =================================================================
 
   - Liste de suivi : les actions que tu surveilles sans forcément les détenir, avec pour chacune
-    des seuils d'alerte (baisse du jour en %, cours plancher, cours plafond).
+    des seuils d'alerte (baisse du jour en %, cours plancher, cours plafond) et une alerte technique
+    au choix (moyenne 200 jours, croisement des moyennes 50/200, RSI).
   - Agenda : prochaines publications de résultats et dates de dividendes des actions suivies
     et de celles du portefeuille.
   - Alertes : vérifiées toutes les 15 minutes tant que l'application est ouverte ; une
@@ -26,6 +27,10 @@ FICHIER = chemins.UTILISATEUR / "suivi.json"
 FICHIER_PF = chemins.UTILISATEUR / "portefeuille.json"
 FICHIER_ALERTES = chemins.UTILISATEUR / "alertes.json"
 BAISSE_DEFAUT = 5.0     # alerte si l'action perd plus de 5 % dans la journée
+# Alertes techniques (une seule par ligne, au choix)
+TECHNIQUES = {"mm200": "Le cours franchit sa moyenne mobile 200 jours",
+              "croisement": "Croisement des moyennes 50 et 200 jours (« croix dorée » ou « croix de la mort »)",
+              "rsi": "Le RSI entre en zone de survente (< 30) ou de surachat (> 70)"}
 
 _cache = {}
 
@@ -52,7 +57,8 @@ def enregistrer(lignes: list) -> list:
                 return None
         propres.append({"ticker": t, "nom": str(l.get("nom") or t)[:120], "place": str(l.get("place") or "")[:40],
                         "baisse": nombre(l.get("baisse")) if "baisse" in l else BAISSE_DEFAUT,
-                        "haut": nombre(l.get("haut")), "bas": nombre(l.get("bas"))})
+                        "haut": nombre(l.get("haut")), "bas": nombre(l.get("bas")),
+                        "technique": l.get("technique") if l.get("technique") in TECHNIQUES else ""})
     chemins.UTILISATEUR.mkdir(parents=True, exist_ok=True)
     FICHIER.write_text(json.dumps(propres, ensure_ascii=False, indent=1), encoding="utf-8")
     _cache.pop("etat", None)
@@ -72,6 +78,57 @@ def _cours(tickers: list) -> dict:
             res[t] = {"dernier": float(s.iloc[-1]), "var_jour": float(s.iloc[-1] / s.iloc[-2] - 1),
                       "date": s.index[-1].strftime("%d/%m")}
     return res
+
+
+def indicateurs(t: str, dernier: float = None) -> dict:
+    """MM50, MM200 et RSI 14 jours d'aujourd'hui et d'hier (historique mis en cache pour la journée)."""
+    cle = ("histo", t, date.today().isoformat())
+    if cle not in _cache:
+        s = yf.download(t, period="15mo", auto_adjust=True, progress=False)["Close"].squeeze().dropna()
+        _cache[cle] = s
+    s = _cache[cle].copy()
+    if dernier is not None and len(s):
+        s.iloc[-1] = dernier                       # cours le plus récent (séance en cours)
+    if len(s) < 210:
+        return {}
+    mm50, mm200 = s.rolling(50).mean(), s.rolling(200).mean()
+    d = s.diff()
+    hausse = d.clip(lower=0).ewm(alpha=1 / 14, adjust=False).mean()
+    baisse = (-d.clip(upper=0)).ewm(alpha=1 / 14, adjust=False).mean()
+    rsi = 100 - 100 / (1 + hausse / baisse)
+    return {"cours": [float(s.iloc[-2]), float(s.iloc[-1])], "mm50": [float(mm50.iloc[-2]), float(mm50.iloc[-1])],
+            "mm200": [float(mm200.iloc[-2]), float(mm200.iloc[-1])], "rsi": [float(rsi.iloc[-2]), float(rsi.iloc[-1])]}
+
+
+def signal_technique(l: dict, ind: dict):
+    """(règle, texte) si l'alerte technique choisie se déclenche aujourd'hui, sinon None."""
+    if not ind or not l.get("technique"):
+        return None
+    c, m50, m200, rsi = ind["cours"], ind["mm50"], ind["mm200"], ind["rsi"]
+    t = l["technique"]
+    if t == "mm200":
+        if c[0] >= m200[0] and c[1] < m200[1]:
+            return "mm200", f"{l['nom']} passe sous sa moyenne 200 jours ({fr(m200[1])}) : la tendance de fond se dégrade"
+        if c[0] <= m200[0] and c[1] > m200[1]:
+            return "mm200", f"{l['nom']} repasse au-dessus de sa moyenne 200 jours ({fr(m200[1])}) : signal de reprise"
+    if t == "croisement":
+        if m50[0] <= m200[0] and m50[1] > m200[1]:
+            return "croisement", f"{l['nom']} : croix dorée, la moyenne 50 jours passe au-dessus de la 200 jours (signal haussier)"
+        if m50[0] >= m200[0] and m50[1] < m200[1]:
+            return "croisement", f"{l['nom']} : croix de la mort, la moyenne 50 jours passe sous la 200 jours (signal baissier)"
+    if t == "rsi":
+        if rsi[0] >= 30 > rsi[1]:
+            return "rsi", f"{l['nom']} : RSI à {fr(rsi[1], 0)}, zone de survente (la baisse a peut-être été excessive)"
+        if rsi[0] <= 70 < rsi[1]:
+            return "rsi", f"{l['nom']} : RSI à {fr(rsi[1], 0)}, zone de surachat (la hausse a peut-être été excessive)"
+    return None
+
+
+def etat_technique(ind: dict) -> str:
+    if not ind:
+        return ""
+    c, m200, rsi = ind["cours"][1], ind["mm200"][1], ind["rsi"][1]
+    return f"{'au-dessus' if c > m200 else 'sous'} MM200 · RSI {fr(rsi, 0)}"
 
 
 def _agenda_action(t: str) -> list:
@@ -112,7 +169,15 @@ def etat() -> dict:
         e["nom"] = noms.get(e["ticker"], e["ticker"])
         e["source"] = "portefeuille" if any(l["ticker"] == e["ticker"] for l in pf) else "suivi"
     agenda.sort(key=lambda e: e["date"])
-    lignes = [{**l, **cours.get(l["ticker"], {})} for l in suivies]
+    def tech(l):
+        try:
+            c = cours.get(l["ticker"], {})
+            return etat_technique(indicateurs(l["ticker"], c.get("dernier")))
+        except Exception:
+            return ""
+    with ThreadPoolExecutor(6) as ex:
+        etats = list(ex.map(tech, suivies))
+    lignes = [{**l, **cours.get(l["ticker"], {}), "etat_technique": e} for l, e in zip(suivies, etats)]
     res = {"lignes": lignes, "agenda": agenda, "alertes": alertes_recentes()}
     _cache["etat"] = (time.time(), res, cle)
     return res
@@ -156,6 +221,13 @@ def verifier_alertes() -> list:
             regles.append(("haut", f"{l['nom']} dépasse {fr(l['haut'])} (cours : {fr(c['dernier'])})"))
         if l.get("bas") and c["dernier"] <= l["bas"]:
             regles.append(("bas", f"{l['nom']} passe sous {fr(l['bas'])} (cours : {fr(c['dernier'])})"))
+        if l.get("technique"):
+            try:
+                sig = signal_technique(l, indicateurs(l["ticker"], c["dernier"]))
+                if sig:
+                    regles.append(sig)
+            except Exception:
+                pass
         for regle, texte in regles:
             if (l["ticker"], regle, jour) in deja:
                 continue

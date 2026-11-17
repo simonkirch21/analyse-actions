@@ -37,6 +37,10 @@ import interpretation_valorisation as ipv
 import actualites
 import base_fondamentale
 import note_analyse
+import resultats
+import qualite
+import facteurs
+import dividendes
 
 import chemins
 DOSSIER_RAPPORTS = chemins.RAPPORTS
@@ -135,6 +139,21 @@ def analyser(ticker: str, indice: str, periode: str, progression=print) -> dict:
     except Exception as erreur:
         val = {"applicable": False, "raison": f"La valorisation n'a pas pu être calculée ({erreur})."}
 
+    progression("Résultats publiés, qualité des bénéfices, facteurs de style et dividendes…")
+    from concurrent.futures import ThreadPoolExecutor
+
+    def sur(fonction, *args):
+        try:
+            return fonction(*args)
+        except Exception as erreur:
+            return {"applicable": False, "raison": f"Analyse impossible pour le moment ({erreur})."}
+    with ThreadPoolExecutor(3) as ex:
+        f_res = ex.submit(sur, resultats.analyser, ticker, indice)
+        f_fac = ex.submit(sur, facteurs.analyser, ticker, infos.get("Devise") or "")
+        f_div = ex.submit(sur, dividendes.analyser, ticker, fin)
+        qual = sur(qualite.analyser, fin)
+        publi, fact, divi = f_res.result(), f_fac.result(), f_div.result()
+
     progression("Génération des graphiques…")
     graphiques = {
         "p1": image_base64(p1.graphique, prix, rend),
@@ -149,12 +168,22 @@ def analyser(ticker: str, indice: str, periode: str, progression=print) -> dict:
             graphiques["fin_" + nom] = image_base64(fonction, fin)
     if val["applicable"]:
         graphiques["valorisation"] = image_base64(p9.graphique, val, ticker)
+    for cle, donnees, fonction, args in (("resultats", publi, resultats.graphique, (publi, ticker)),
+                                         ("facteurs", fact, facteurs.graphique, (fact, ticker)),
+                                         ("qualite", qual, qualite.graphique, (qual,)),
+                                         ("dividendes", divi, dividendes.graphique, (divi, ticker))):
+        if donnees.get("applicable"):
+            try:
+                graphiques[cle] = image_base64(fonction, *args)
+            except Exception:
+                pass
 
     a = dict(ticker=ticker, indice=indice, periode=periode, prix=prix, infos=infos,
              prix_indice=prix_indice, fin=fin, val=val, actus=actus, concurrents=concurrents, actionnaires=actionnaires,
              perf=perf, annuels=annuels, capm=capm, relatif=relatif,
              distrib=distrib, tab_var=tab_var, bt=bt, signaux=signaux,
              tab_strat=tab_strat, mu=mu, sigma=sigma, simu=simu, opt=opt,
+             resultats=publi, facteurs=fact, qualite=qual, dividendes=divi,
              graphiques=graphiques)
 
     # Note d'analyse : fourchettes de valeur (DCF, comparables, analystes), thèse, chiffres clés
@@ -529,7 +558,11 @@ def generer_html(a: dict) -> str:
           "<a href='#s1'>1. Données</a><a href='#s2'>2. Performance</a><a href='#s3'>3. Marché</a>"
           "<a href='#s4'>4. Risque</a><a href='#s5'>5. Technique</a><a href='#s6'>6. Simulation</a>"
           "<a href='#s7'>7. Analyse financière de l'entreprise</a>"
-          "<a href='#s8'>8. Valorisation et scores</a></nav>")
+          "<a href='#s8'>8. Valorisation et scores</a>"
+          + ("<a href='#resultats'>Résultats publiés</a>" if a.get("resultats") else "")
+          + ("<a href='#facteurs'>Facteurs de style</a>" if a.get("facteurs") else "")
+          + ("<a href='#qualite'>Qualité des bénéfices</a>" if a.get("qualite") else "")
+          + ("<a href='#dividendes'>Dividendes</a>" if a.get("dividendes") else "") + "</nav>")
 
     h += note_analyse.section_html(a)
 
@@ -545,6 +578,8 @@ def generer_html(a: dict) -> str:
           "ce rapport n'est pas un conseil d'investissement.</p>")
 
     h += section_actualites(a)
+    if a.get("resultats"):
+        h += resultats.section_html(a["resultats"], a["graphiques"].get("resultats", ""))
     h += section_concurrents(a)
     h += section_actionnaires(a)
 
@@ -601,6 +636,8 @@ def generer_html(a: dict) -> str:
     h += ("<p class='note'>Si l'indice est un indice de prix (sans dividendes, ex. ^FCHI) alors que "
           "l'action est en dividendes réinvestis, l'alpha est légèrement surestimé.</p>")
     h += guide + a["graphiques"]["p3"]
+    if a.get("facteurs"):
+        h += facteurs.section_html(a["facteurs"], a["graphiques"].get("facteurs", ""))
 
     # --- 4. Risque
     d, bt = a["distrib"], a["bt"]
@@ -667,6 +704,10 @@ def generer_html(a: dict) -> str:
 
     h += section_analyse_financiere(a)
     h += section_valorisation(a)
+    if a.get("qualite"):
+        h += qualite.section_html(a["qualite"], a["graphiques"].get("qualite", ""))
+    if a.get("dividendes"):
+        h += dividendes.section_html(a["dividendes"], a["graphiques"].get("dividendes", ""))
     h += ip.lexique()
     # Ancres pour le sommaire : <h2>1. ...</h2> -> <h2 id="s1">1. ...</h2>
     h = re.sub(r"<h2>(\d)\. ", lambda m: f"<h2 id='s{m.group(1)}'>{m.group(1)}. ", h)

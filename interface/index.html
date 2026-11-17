@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#0A0F1C">
+<link rel="icon" href="data:,">
 <title>Analyse Actions</title>
 <link rel="stylesheet" href="pro.css">
 <style>
@@ -382,11 +383,13 @@ button:active:not(:disabled), .chip:active, .indice:active { transform: scale(0.
         <button data-m="macro">Économie</button>
         <button data-m="options">Options</button>
         <button data-m="dcf">DCF</button>
+        <button data-m="secteurs">Secteurs</button>
       </div>
       <div class="segment" aria-label="Mes outils">
         <button data-m="portefeuille">Portefeuille<span class="compteur" id="nb-pf">0</span></button>
         <button data-m="suivi">Suivi<span class="compteur" id="nb-suivi">0</span></button>
         <button data-m="fictifs">Bourse fictive</button>
+        <button data-m="etf">ETF</button>
         <button data-m="simulateur">Simulateur</button>
         <button data-m="screener">Filtre</button>
       </div>
@@ -432,12 +435,28 @@ button:active:not(:disabled), .chip:active, .indice:active { transform: scale(0.
   <button id="voir-graphique" title="Graphique interactif : bougies, volumes, indicateurs">📈 Graphique</button>
   <button id="ajout-pf" title="Ajouter cette action à ton portefeuille">+ Portefeuille</button>
   <button id="ajout-suivi" title="Surveiller cette action (alertes, agenda des résultats et dividendes)">☆ Suivre</button>
+  <button id="ouvrir-journal" title="Ton journal d'investissement pour cette action : pourquoi tu l'achètes, à quel prix tu vendrais">📝 Journal</button>
   <button id="retour-pf" title="Revenir à la liste des actions du portefeuille">Modifier le portefeuille</button>
   <button id="export-note" title="Enregistrer la note d'analyse d'une page (verdict, football field, chiffres clés) en PDF">Note PDF</button>
   <button id="export-pdf" title="Enregistrer le rapport en PDF">PDF</button>
   <button id="export-xlsx" title="Enregistrer tous les chiffres dans un classeur Excel">Excel</button>
   <button id="actualiser" title="Recalculer avec les données les plus récentes">Actualiser</button>
 </div>
+<div class="rappel-journal" id="rappel-journal" hidden></div>
+<aside class="tiroir-journal" id="tiroir-journal" role="dialog" aria-labelledby="j-titre" hidden>
+  <button class="fermer-j" id="fermer-journal" aria-label="Fermer le journal">×</button>
+  <h3 id="j-titre">Journal</h3>
+  <p class="note-a">Écris tes raisons <b>avant</b> d'acheter : dans six mois, tu sauras si la thèse tient toujours, au lieu de
+    garder l'action par habitude ou de la vendre sur un coup de stress. C'est la discipline des gérants professionnels.</p>
+  <label class="j-champ">Pourquoi cette action ? (ta thèse)
+    <textarea id="j-these" rows="5" placeholder="Ex. : leader mondial du luxe, marges très élevées, la Chine va repartir…"></textarea></label>
+  <label class="j-champ">Ce qui me ferait changer d'avis
+    <textarea id="j-risque" rows="3" placeholder="Ex. : deux trimestres de baisse des ventes en Asie, marge sous 20 %…"></textarea></label>
+  <div class="j-prix"><label>Prix d'achat visé<input id="j-achat" type="number" step="0.01" min="0"></label>
+    <label>Prix de vente visé<input id="j-vente" type="number" step="0.01" min="0"></label></div>
+  <div class="j-actions"><button class="bouton" id="j-enregistrer">Enregistrer</button>
+    <span class="note-a" id="j-msg" role="status" aria-live="polite"></span></div>
+</aside>
 
 <main>
   <section class="accueil" id="accueil">
@@ -501,6 +520,8 @@ button:active:not(:disabled), .chip:active, .indice:active { transform: scale(0.
         <label class="lien" title="Pour l'estimation des impôts dans le suivi réel">Compte :
           <select id="enveloppe"><option value="CTO">Compte-titres (CTO)</option><option value="PEA">PEA</option></select></label>
       </div>
+      <div class="div-pf"><button class="bouton secondaire" id="voir-div-pf">Dividendes du portefeuille : revenu et calendrier</button>
+        <div id="div-pf"></div></div>
     </div>
   </section>
 
@@ -519,6 +540,8 @@ button:active:not(:disabled), .chip:active, .indice:active { transform: scale(0.
             le cours baisse en général du montant versé ce jour-là.</p></div>
         <div><h3>Dernières alertes</h3><ul class="agenda" id="alertes"><li>Aucune alerte.</li></ul></div>
       </div>
+      <h3>Mon journal d'investissement</h3>
+      <div id="liste-journal"><p class="note-a">Aucune note pour l'instant : ouvre le rapport d'une action puis « 📝 Journal ».</p></div>
     </div>
   </section>
 
@@ -649,6 +672,32 @@ button:active:not(:disabled), .chip:active, .indice:active { transform: scale(0.
       <div id="marches-contenu"><p class="note-a">Chargement…</p></div>
       <p class="note-a">Les cryptomonnaies sont extrêmement volatiles (souvent plus de 50 % par an) et ne reposent sur aucun
         bénéfice ni revenu : leur prix dépend uniquement de l'offre et de la demande.</p>
+    </div>
+  </section>
+
+  <section class="panneau-pf" id="panneau-secteurs">
+    <div class="carte">
+      <h2 id="sect-titre">Secteurs</h2>
+      <p class="aide">Chaque secteur a ses propres normes : un PER de 25 est cher pour une banque mais courant dans la
+        technologie, une marge de 5 % est faible pour un éditeur de logiciels mais bonne pour un distributeur. Compare
+        toujours une entreprise à son secteur. Données : base de ~1 350 entreprises (Euronext et S&amp;P 500), 12 derniers mois.</p>
+      <div id="sect-contenu"><p class="note-a">Chargement…</p></div>
+    </div>
+  </section>
+
+  <section class="panneau-pf" id="panneau-etf">
+    <div class="carte">
+      <h2>ETF (fonds indiciels)</h2>
+      <p class="aide">Un ETF réplique un indice (CAC 40, S&amp;P 500, MSCI World…) : en une seule ligne, tu détiens des
+        centaines d'entreprises, avec des frais très bas. C'est souvent le meilleur premier placement. Choisis un ETF
+        ci-dessous ou tape son ticker Yahoo (ex. CW8.PA), puis compare-le à un autre.</p>
+      <div class="etf-choix">
+        <label>ETF<input id="etf-a" value="CW8.PA" spellcheck="false" autocomplete="off"></label>
+        <label>Comparer avec (facultatif)<input id="etf-b" placeholder="ex. PE500.PA" spellcheck="false" autocomplete="off"></label>
+        <button class="bouton" id="etf-go">Analyser</button>
+      </div>
+      <div class="etf-populaires" id="etf-populaires"></div>
+      <div id="etf-contenu"></div>
     </div>
   </section>
 
@@ -816,6 +865,7 @@ function choisi(n, a) {
   if (mode === "graphique") { ouvrirGraphique(a.ticker, a.nom); R[1].champ.value = ""; return; }
   if (mode === "options") { chargerOptions(a.ticker, a.nom); R[1].champ.value = ""; return; }
   if (mode === "dcf") { ouvrirDCF(a.ticker, a.nom); R[1].champ.value = ""; return; }
+  if (mode === "secteurs" || mode === "etf") { document.querySelector('#mode button[data-m="simple"]').click(); return lancerAnalyse(a, false); }
   if (mode === "carte" || mode === "marches") { document.querySelector('#mode button[data-m="simple"]').click(); return lancerAnalyse(a, false); }
   majBouton();
   if (n === 1 && !choix[2]) R[2].champ.focus();
@@ -948,6 +998,7 @@ function afficherRapport(s, titre) {
   $("chargement").classList.remove("ouvert");
   nomRapport = s.nom;
   $("export-note").hidden = !(courant && courant.type === "simple");   // la note n'existe que pour une action
+  if (window.majRappelJournal) majRappelJournal();
   $("rapport").src = s.rapport;
   $("rapport").classList.add("ouvert");
   $("outils").classList.add("ouvert");
@@ -1070,7 +1121,8 @@ $("vider-pf").addEventListener("click", () => {
 });
 const PANNEAUX = { portefeuille: "panneau-pf", suivi: "panneau-suivi", simulateur: "panneau-sim", screener: "panneau-screener",
                    macro: "panneau-macro", fictifs: "panneau-fictifs", graphique: "panneau-graphique",
-                   carte: "panneau-carte", marches: "panneau-marches", options: "panneau-options", dcf: "panneau-dcf" };
+                   carte: "panneau-carte", marches: "panneau-marches", options: "panneau-options", dcf: "panneau-dcf",
+                   secteurs: "panneau-secteurs", etf: "panneau-etf" };
 function ouvrirPanneau(id = "panneau-pf") {
   document.body.classList.remove("vue-pf");
   document.body.classList.add("compact");
@@ -1417,16 +1469,22 @@ function afficherSuivi(cours) {
     ? `<div class="pf-vide">Ta liste est vide. Tape le nom d'une action dans la barre de recherche pour la suivre.</div>`
     : `<table class="t-pf"><thead><tr><th>Ticker</th><th>Entreprise</th><th>Cours</th><th>Jour</th>
         <th title="Alerte si l'action perd plus que ce pourcentage dans la journée">Alerte baisse (%)</th>
-        <th title="Alerte si le cours passe sous ce prix">Plancher</th><th title="Alerte si le cours dépasse ce prix">Plafond</th><th></th></tr></thead><tbody>` +
+        <th title="Alerte si le cours passe sous ce prix">Plancher</th><th title="Alerte si le cours dépasse ce prix">Plafond</th>
+        <th title="Alerte sur un signal d'analyse technique (vérifiée toutes les 15 minutes)">Alerte technique</th><th></th></tr></thead><tbody>` +
       listeSuivi.map((l, i) => { const c = cours[l.ticker] || {};
         return `<tr><td class="tk">${echapper(l.ticker)}</td><td>${echapper(l.nom)}</td>
         <td>${c.dernier != null ? fr(c.dernier) : "…"}</td><td class="${sens(c.var_jour)}">${c.var_jour != null ? pctTxt(c.var_jour) : ""}</td>
         <td><input class="court" type="number" min="0" step="0.5" data-i="${i}" data-s="baisse" value="${l.baisse ?? ""}"></td>
         <td><input class="court" type="number" min="0" step="0.01" data-i="${i}" data-s="bas" value="${l.bas ?? ""}"></td>
         <td><input class="court" type="number" min="0" step="0.01" data-i="${i}" data-s="haut" value="${l.haut ?? ""}"></td>
+        <td><select class="sel-tech" data-i="${i}" aria-label="Alerte technique">${[["", "Aucune"], ["mm200", "Passage de la MM200"], ["croisement", "Croisement MM50 / MM200"], ["rsi", "RSI < 30 ou > 70"]]
+          .map(([v, t]) => `<option value="${v}" ${(l.technique || "") === v ? "selected" : ""}>${t}</option>`).join("")}</select>
+          ${c.etat_technique ? `<div class="note-a">${echapper(c.etat_technique)}</div>` : ""}</td>
         <td><button class="suppr" data-i="${i}" title="Ne plus suivre" aria-label="Ne plus suivre">×</button></td></tr>`; }).join("") + "</tbody></table>";
 }
 $("liste-suivi").addEventListener("change", async (e) => {
+  const sel = e.target.closest("select.sel-tech");
+  if (sel) { listeSuivi[+sel.dataset.i].technique = sel.value; await sauverSuivi(); return; }
   const inp = e.target.closest("input[data-s]"); if (!inp) return;
   listeSuivi[+inp.dataset.i][inp.dataset.s] = inp.value === "" ? null : +inp.value;
   await sauverSuivi();
@@ -1744,5 +1802,6 @@ R[1].champ.focus();
 </script>
 <script src="pro.js"></script>
 <script src="dcf.js"></script>
+<script src="outils2.js"></script>
 </body>
 </html>

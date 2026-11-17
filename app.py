@@ -44,6 +44,10 @@ import calendrier
 import options_cotees
 import dcf_avance
 import note_analyse
+import journal
+import secteurs
+import etf
+import dividendes
 from datetime import date
 
 import chemins
@@ -298,6 +302,50 @@ def api_dcf_excel(ticker):
         (RAPPORTS / f"{nom}.xlsx").write_bytes(dcf_avance.classeur(r))
         return {"nom": nom}
     return _action_fictive(preparer)
+
+
+@app.get("/api/journal")
+def api_journal():
+    return jsonify(journal.lire())
+
+
+@app.post("/api/journal/<ticker>")
+def api_journal_enregistrer(ticker):
+    if not NOM_VALIDE.match(ticker):
+        abort(400)
+    return jsonify(journal.enregistrer(ticker.upper(), _corps()))
+
+
+@app.get("/api/secteurs")
+def api_secteurs():
+    return _reponse(secteurs.vue_ensemble)
+
+
+@app.get("/api/secteurs/detail")
+def api_secteur_detail():
+    return _action_fictive(lambda: secteurs.detail(request.args.get("nom", ""), request.args.get("univers", "")))
+
+
+@app.get("/api/etf/populaires")
+def api_etf_populaires():
+    return jsonify([{"ticker": t, "nom": n} for t, n in etf.POPULAIRES])
+
+
+@app.get("/api/etf/<ticker>")
+def api_etf(ticker):
+    if not NOM_VALIDE.match(ticker):
+        abort(400)
+    autre = request.args.get("comparer", "")
+    if autre:
+        if not NOM_VALIDE.match(autre):
+            abort(400)
+        return _action_fictive(lambda: etf.comparer(ticker.upper(), autre.upper()))
+    return _action_fictive(lambda: etf.analyser(ticker.upper()))
+
+
+@app.get("/api/dividendes/portefeuille")
+def api_dividendes_pf():
+    return _action_fictive(lambda: dividendes.calendrier_portefeuille(suivi.lire(suivi.FICHIER_PF)))
 
 
 @app.get("/api/macro")
