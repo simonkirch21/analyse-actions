@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Analyse Actions — l'analyse boursière des pros, expliquée simplement</title>
+<meta name="description" content="Application Mac gratuite d'analyse boursière : rapport complet sur plus de 7 700 actions, note d'analyse, modèle DCF, portefeuille, ETF, secteurs. Chaque chiffre est expliqué.">
+<meta name="theme-color" content="#0A0F1C">
+<meta property="og:title" content="Analyse Actions">
+<meta property="og:description" content="L'analyse boursière des professionnels, expliquée simplement. Application Mac gratuite.">
+<meta property="og:image" content="images/note.jpg">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 34 34'%3E%3Crect x='1' y='1' width='32' height='32' rx='8' fill='%23D4AF6A'/%3E%3Cpath d='M7 23l6-6 4 4 9-10' fill='none' stroke='%230A0F1C' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<style>
+:root {
+  --fond: #0A0F1C; --carte: #10182A; --texte: #ECE8DF; --doux: #8D94A5; --bord: #1E2940;
+  --or: #D4AF6A; --or-doux: rgba(212,175,106,.12); --vert: #3BC48F; --rouge: #FF6B5A;
+  --serif: "New York", ui-serif, "Iowan Old Style", Georgia, serif;
+  --mono: ui-monospace, "SF Mono", Menlo, monospace;
+  --ease: cubic-bezier(0.23, 1, 0.32, 1);
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body { margin: 0; background: var(--fond); color: var(--texte); font: 17px/1.6 -apple-system, "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased; font-variant-numeric: tabular-nums; }
+a { color: var(--or); }
+h1, h2, h3 { font-family: var(--serif); font-weight: 600; letter-spacing: -0.015em; text-wrap: balance; }
+.conteneur { max-width: 1120px; margin: 0 auto; padding: 0 24px; }
+
+/* En-tête */
+nav { display: flex; justify-content: space-between; align-items: center; padding: 22px 0; }
+.marque { display: flex; align-items: center; gap: 10px; font: 600 19px var(--serif); color: var(--texte); text-decoration: none; }
+.marque svg { width: 30px; height: 30px; }
+nav .liens a { color: var(--doux); text-decoration: none; margin-left: 22px; font-size: 15px; }
+nav .liens a:hover { color: var(--texte); }
+
+/* Accroche */
+.hero { padding: 64px 0 40px; text-align: center; }
+.surtitre { font: 600 12.5px -apple-system, sans-serif; letter-spacing: .16em; text-transform: uppercase; color: var(--or); }
+.hero h1 { font-size: clamp(38px, 6vw, 64px); line-height: 1.08; margin: 14px auto 18px; max-width: 900px; }
+.hero h1 em { font-style: normal; color: var(--or); }
+.hero p.chapo { color: var(--doux); font-size: 19px; max-width: 680px; margin: 0 auto 30px; text-wrap: pretty; }
+.boutons { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+.btn { display: inline-flex; align-items: center; gap: 9px; padding: 13px 22px; border-radius: 12px; font-weight: 600;
+  text-decoration: none; font-size: 16px; transition: transform .16s var(--ease), filter .16s var(--ease); }
+.btn:hover { transform: translateY(-2px); filter: brightness(1.08); }
+.btn:active { transform: scale(.98); }
+.btn.principal { background: var(--or); color: var(--fond); }
+.btn.secondaire { border: 1px solid var(--bord); color: var(--texte); background: var(--carte); }
+.petit { color: var(--doux); font-size: 13.5px; margin-top: 14px; }
+.chiffres { display: flex; justify-content: center; gap: 44px; flex-wrap: wrap; margin: 48px 0 0; }
+.chiffres div { text-align: center; } .chiffres b { display: block; font: 600 30px var(--mono); color: var(--texte); }
+.chiffres span { color: var(--doux); font-size: 13.5px; }
+
+/* Captures */
+.ecran { margin: 48px auto 0; border-radius: 16px; overflow: hidden; border: 1px solid var(--bord);
+  box-shadow: 0 30px 90px rgba(0,0,0,.55), 0 0 0 1px rgba(212,175,106,.08); max-width: 1000px; }
+.ecran img { display: block; width: 100%; height: auto; }
+
+section { padding: 80px 0 20px; }
+section > .conteneur > h2 { font-size: clamp(28px, 4vw, 40px); margin: 6px 0 12px; }
+.intro { color: var(--doux); max-width: 720px; margin: 0 0 34px; }
+
+/* Fonctionnalités */
+.grille { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; }
+.carte { background: var(--carte); border: 1px solid var(--bord); border-radius: 14px; padding: 22px; transition: border-color .2s, transform .2s var(--ease); }
+.carte:hover { border-color: color-mix(in srgb, var(--or) 50%, var(--bord)); transform: translateY(-2px); }
+.carte .ic { font-size: 22px; } .carte h3 { margin: 8px 0 6px; font-size: 20px; } .carte p { margin: 0; color: var(--doux); font-size: 15.5px; }
+
+/* Démonstrations alternées */
+.demo { display: grid; grid-template-columns: 1fr 1.25fr; gap: 44px; align-items: center; margin: 0 0 70px; }
+.demo.inverse { grid-template-columns: 1.25fr 1fr; }
+.demo.inverse .texte { order: 2; }
+.demo h3 { font-size: 28px; margin: 0 0 12px; }
+.demo p { color: var(--doux); margin: 0 0 12px; }
+.demo ul { margin: 0; padding-left: 18px; color: var(--doux); } .demo li { margin: 6px 0; }
+.demo li b { color: var(--texte); font-weight: 600; }
+.visuel { border-radius: 14px; overflow: hidden; border: 1px solid var(--bord); background: var(--carte); box-shadow: 0 20px 60px rgba(0,0,0,.4); }
+.visuel img { display: block; width: 100%; height: auto; }
+@media (max-width: 860px) { .demo, .demo.inverse { grid-template-columns: 1fr; } .demo.inverse .texte { order: 0; } }
+
+/* Galerie de graphiques */
+.galerie { display: grid; grid-template-columns: repeat(auto-fit, minmax(420px, 1fr)); gap: 16px; }
+.galerie figure { margin: 0; background: var(--carte); border: 1px solid var(--bord); border-radius: 14px; overflow: hidden; }
+.galerie img { display: block; width: 100%; height: auto; }
+.galerie figcaption { padding: 12px 16px; color: var(--doux); font-size: 14.5px; }
+.galerie figcaption b { color: var(--texte); }
+
+/* Installation */
+.etapes { counter-reset: e; list-style: none; padding: 0; margin: 0; display: grid; gap: 12px; max-width: 760px; }
+.etapes li { counter-increment: e; background: var(--carte); border: 1px solid var(--bord); border-radius: 12px; padding: 16px 18px 16px 62px; position: relative; color: var(--doux); }
+.etapes li::before { content: counter(e); position: absolute; left: 18px; top: 15px; width: 30px; height: 30px; border-radius: 99px;
+  background: var(--or-doux); color: var(--or); font: 600 15px var(--mono); display: grid; place-items: center; }
+.etapes b { color: var(--texte); }
+code { font: 14px var(--mono); background: var(--fond); border: 1px solid var(--bord); padding: 2px 6px; border-radius: 6px; color: var(--texte); }
+
+.avert { border-left: 3px solid var(--or); background: var(--or-doux); padding: 16px 20px; border-radius: 0 12px 12px 0; color: var(--doux); max-width: 820px; }
+footer { border-top: 1px solid var(--bord); margin-top: 90px; padding: 30px 0 50px; color: var(--doux); font-size: 14px; }
+footer .conteneur { display: flex; justify-content: space-between; gap: 20px; flex-wrap: wrap; }
+
+:focus-visible { outline: 2px solid var(--or); outline-offset: 3px; border-radius: 8px; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; scroll-behavior: auto !important; } }
+</style>
+</head>
+<body>
+
+<header class="conteneur">
+  <nav>
+    <a class="marque" href="#"><svg viewBox="0 0 34 34" aria-hidden="true"><rect x="1" y="1" width="32" height="32" rx="8" fill="#D4AF6A"/>
+      <path d="M7 23l6-6 4 4 9-10" fill="none" stroke="#0A0F1C" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>Analyse Actions</a>
+    <div class="liens"><a href="#fonctions">Fonctionnalités</a><a href="#installer">Installer</a>
+      <a href="https://github.com/simonkirch21/analyse-actions">Code source</a></div>
+  </nav>
+</header>
+
+<main>
+  <div class="conteneur hero">
+    <div class="surtitre">Application Mac · gratuite · open source</div>
+    <h1>L'analyse boursière des pros, <em>expliquée simplement</em></h1>
+    <p class="chapo">Tape le nom d'une entreprise : en quelques secondes, un rapport complet comme ceux des banques d'affaires.
+      Et pour chaque chiffre, ce qu'il veut dire et comment il est calculé.</p>
+    <div class="boutons">
+      <a class="btn principal" href="https://github.com/simonkirch21/analyse-actions/releases/latest/download/Analyse-Actions.dmg">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 3v11.17l3.59-3.58L17 12l-5 5-5-5 1.41-1.41L11 14.17V3h1zM5 19h14v2H5z"/></svg>
+        Télécharger pour Mac</a>
+      <a class="btn secondaire" href="#fonctions">Voir ce qu'elle fait</a>
+    </div>
+    <p class="petit">Pour Mac avec puce Apple (M1 et suivantes) · environ 90 Mo</p>
+    <div class="chiffres">
+      <div><b>7 700+</b><span>actions dans la liste</span></div>
+      <div><b>Monde</b><span>toute action Yahoo Finance</span></div>
+      <div><b>15</b><span>parties d'analyse</span></div>
+      <div><b>0 €</b><span>sans compte ni abonnement</span></div>
+    </div>
+    <div class="ecran"><img src="images/note.jpg" alt="Note d'analyse de LVMH dans l'application : verdict, valeur centrale, fourchette et thèse rédigée" width="800" height="500"></div>
+  </div>
+
+  <section id="fonctions">
+    <div class="conteneur">
+      <div class="surtitre">Fonctionnalités</div>
+      <h2>Tout ce qu'un analyste regarde, au même endroit</h2>
+      <p class="intro">Conçue pendant un Master 1 Finance, à partir des méthodes du cours d'analyse financière et des outils des
+        salles de marché. Chaque partie commence par expliquer la notion, puis ce qu'il faut retenir pour l'entreprise.</p>
+      <div class="grille">
+        <div class="carte"><div class="ic">📄</div><h3>Note d'analyse</h3><p>Verdict sur la valorisation, thèse rédigée, catalyseurs, risques et un « football field » qui compare six méthodes de valeur. Exportable en PDF d'une page.</p></div>
+        <div class="carte"><div class="ic">🧮</div><h3>Modèle DCF complet</h3><p>Projection sur 5 ans, CMPC détaillé, deux valeurs terminales, trois scénarios, DCF inversé et export Excel avec de vraies formules.</p></div>
+        <div class="carte"><div class="ic">🔎</div><h3>Chaque chiffre expliqué</h3><p>Un clic sur un ratio : sa définition, le calcul avec les chiffres de l'entreprise, les repères et son rang parmi ~1 350 entreprises du secteur.</p></div>
+        <div class="carte"><div class="ic">🏛️</div><h3>Analyse financière</h3><p>SIG, CAF, BFR, effet de levier, ROE et ROIC, scores d'Altman et de Piotroski, qualité des bénéfices (M-score de Beneish).</p></div>
+        <div class="carte"><div class="ic">📈</div><h3>Marché et risque</h3><p>Performance, CAPM, modèle Fama-French, VaR testée, analyse technique, Monte Carlo, options (Black-Scholes, arbre binomial).</p></div>
+        <div class="carte"><div class="ic">📊</div><h3>Résultats publiés</h3><p>Bénéfice attendu contre publié, réaction du cours, et pourquoi une action peut baisser malgré de bons résultats.</p></div>
+        <div class="carte"><div class="ic">💼</div><h3>Portefeuille</h3><p>Frontière de Markowitz, diversification, rééquilibrage, fiscalité française (PEA, flat tax), dividendes mois par mois.</p></div>
+        <div class="carte"><div class="ic">🧺</div><h3>ETF et secteurs</h3><p>Frais et leur coût sur 20 ans, contenu, éligibilité PEA, comparaison de deux ETF ; tableau de bord de chaque secteur.</p></div>
+        <div class="carte"><div class="ic">🎯</div><h3>Pour s'entraîner</h3><p>Portefeuilles fictifs, simulateur d'investissement mensuel, liste de suivi avec alertes et journal d'investissement.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="conteneur">
+      <div class="demo">
+        <div class="texte"><div class="surtitre">Valorisation</div><h3>Six méthodes, une conclusion argumentée</h3>
+          <p>Le graphique « football field » est celui des banques d'affaires : chaque barre est la fourchette de valeur donnée par une méthode.</p>
+          <ul><li><b>DCF</b> par scénarios et par sensibilité</li><li><b>Comparables</b> : PER et VE/EBITDA des concurrents</li>
+            <li><b>Objectifs des analystes</b> et cours des 52 dernières semaines</li>
+            <li>Un verdict prudent : l'app dit quand les méthodes se contredisent</li></ul></div>
+        <div class="visuel"><img src="images/football.png" alt="Graphique football field : fourchettes de valeur de LVMH selon six méthodes" loading="lazy"></div>
+      </div>
+      <div class="demo inverse">
+        <div class="texte"><div class="surtitre">Modèle DCF</div><h3>Le modèle d'une banque d'affaires, modifiable</h3>
+          <p>Toutes les hypothèses sont en bleu : croissance, marges, investissements, coût du capital. Tout se recalcule instantanément.</p>
+          <ul><li><b>DCF inversé</b> : la croissance que suppose le cours actuel</li><li><b>Deux valeurs terminales</b> et ce que chacune suppose de l'autre</li>
+            <li><b>Export Excel</b> avec de vraies formules, pour un TD ou un dossier</li></ul></div>
+        <div class="visuel"><img src="images/dcf.jpg" alt="Écran du modèle DCF : valeur par action, DCF inversé et projection année par année" loading="lazy" width="800" height="500"></div>
+      </div>
+      <div class="demo">
+        <div class="texte"><div class="surtitre">Marchés</div><h3>Un tableau de bord de salle de marché</h3>
+          <p>Indices du monde entier, carte du marché, devises, matières premières et cryptos, courbe des taux, calendrier économique.</p>
+          <ul><li><b>⌘K</b> : une barre de commandes pour tout ouvrir au clavier</li><li><b>Graphique interactif</b> : bougies, moyennes mobiles, RSI, comparaison</li>
+            <li><b>Thème sombre ou clair</b></li></ul></div>
+        <div class="visuel"><img src="images/carte.jpg" alt="Carte du marché du CAC 40 : rectangles colorés selon la variation du jour" loading="lazy" width="800" height="500"></div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="conteneur">
+      <div class="surtitre">Exemples de graphiques</div>
+      <h2>Des graphiques qui racontent quelque chose</h2>
+      <p class="intro">Tous produits par l'application, ici pour Airbus et LVMH.</p>
+      <div class="galerie">
+        <figure><img src="images/resultats.png" alt="Surprises sur le bénéfice par action et réaction du cours d'Airbus" loading="lazy">
+          <figcaption><b>Publications de résultats</b> : surprise sur le bénéfice et réaction du cours, comparée à l'indice.</figcaption></figure>
+        <figure><img src="images/facteurs.png" alt="Exposition de LVMH aux facteurs de Fama-French" loading="lazy">
+          <figcaption><b>Modèle Fama-French</b> : l'« ADN de style » de l'action (taille, value, rentabilité, momentum).</figcaption></figure>
+        <figure><img src="images/dividendes.png" alt="Dividende par action d'Airbus et effet du réinvestissement" loading="lazy">
+          <figcaption><b>Dividendes</b> : historique et effet boule de neige du réinvestissement.</figcaption></figure>
+        <figure><img src="images/qualite.png" alt="Résultat net comparé aux flux de trésorerie d'Airbus" loading="lazy">
+          <figcaption><b>Qualité des bénéfices</b> : le bénéfice se transforme-t-il en trésorerie ?</figcaption></figure>
+      </div>
+    </div>
+  </section>
+
+  <section id="installer">
+    <div class="conteneur">
+      <div class="surtitre">Installation</div>
+      <h2>Prête en deux minutes</h2>
+      <p class="intro">L'application n'est pas vendue sur l'App Store : macOS demande donc une confirmation au premier lancement.</p>
+      <ol class="etapes">
+        <li><b>Télécharge</b> le fichier <code>Analyse-Actions.dmg</code> avec le bouton ci-dessous.</li>
+        <li><b>Ouvre-le</b> et glisse l'icône <b>Analyse Actions</b> dans le dossier <b>Applications</b>.</li>
+        <li>Au premier lancement : <b>clic droit sur l'application → Ouvrir</b>, puis confirme. Sur les versions récentes de macOS, il faut parfois
+          aller dans <b>Réglages Système → Confidentialité et sécurité</b> et cliquer sur <b>Ouvrir quand même</b>.</li>
+        <li>C'est tout : tape le nom d'une entreprise (LVMH, Apple, Airbus…) et l'analyse démarre.</li>
+      </ol>
+      <div class="boutons" style="justify-content:flex-start;margin-top:26px">
+        <a class="btn principal" href="https://github.com/simonkirch21/analyse-actions/releases/latest/download/Analyse-Actions.dmg">Télécharger pour Mac</a>
+        <a class="btn secondaire" href="https://github.com/simonkirch21/analyse-actions">Voir le code sur GitHub</a>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="conteneur">
+      <p class="avert"><b>Outil pédagogique.</b> Les données viennent de sources publiques gratuites (Yahoo Finance, FRED, BCE, bibliothèque de
+        Kenneth French) et peuvent être inexactes ou retardées. Rien dans cette application ne constitue un conseil en investissement.</p>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="conteneur">
+    <span>Analyse Actions · projet réalisé dans le cadre d'un Master 1 Finance</span>
+    <span><a href="https://github.com/simonkirch21/analyse-actions">GitHub</a></span>
+  </div>
+</footer>
+</body>
+</html>
