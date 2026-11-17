@@ -13,9 +13,14 @@ d'investissement mensuel, un filtre d'actions, la macroéconomie, la courbe des 
 
 ## Installation
 
-**Le plus simple (Mac) :** télécharge `Analyse-Actions.dmg` dans la page
+**Le plus simple :** sur la page de présentation https://simonkirch21.github.io/analyse-actions/, ou dans la page
 [Releases](https://github.com/simonkirch21/analyse-actions/releases/latest) du dépôt, ouvre-le et glisse l'application dans le dossier Applications.
-Au premier lancement : clic droit sur l'application → Ouvrir (elle n'est pas signée par Apple).
+- **Mac** : `Analyse-Actions.dmg`, glisser l'app dans Applications ; au premier lancement, clic droit → Ouvrir.
+- **Windows 10/11** : `Analyse-Actions-Windows.zip`, clic droit → Extraire tout, puis `Analyse Actions.exe` ; si Windows
+  affiche « Windows a protégé votre ordinateur » : Informations complémentaires → Exécuter quand même.
+
+La version Windows est construite et vérifiée automatiquement sur une machine Windows de GitHub
+(`.github/workflows/windows.yml`) à chaque nouvelle Release.
 
 **Depuis le code (Python 3.11 ou plus récent) :**
 
