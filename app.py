@@ -549,6 +549,17 @@ def nom_fichier_export(format_: str, nom: str) -> str:
     return f"{nom}_note.pdf" if format_ == "note" else f"{nom}.{format_}"
 
 
+def montrer_fichier(chemin: str) -> None:
+    """Sélectionne le fichier dans le Finder (Mac) ou l'Explorateur (Windows)."""
+    try:
+        if chemins.MAC:
+            subprocess.run(["open", "-R", chemin])
+        elif chemins.WINDOWS:
+            subprocess.run(["explorer", "/select,", str(Path(chemin))])
+    except OSError:
+        pass
+
+
 class Api:
     """Fonctions Python appelables depuis la page (window.pywebview.api.…)."""
 
@@ -560,7 +571,7 @@ class Api:
             return ""                                   # l'utilisateur a annulé
         chemin = choix if isinstance(choix, str) else choix[0]
         Path(chemin).write_bytes(contenu_export(format_, nom))
-        subprocess.run(["open", "-R", chemin])          # montre le fichier dans le Finder
+        montrer_fichier(chemin)
         return chemin
 
 

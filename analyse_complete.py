@@ -464,8 +464,8 @@ CSS = """
 /* Thème « salle des marchés » : papier ivoire et encre marine, or pour l'accent */
 :root { --fond:#0A0F1C; --carte:#10182A; --texte:#ECE8DF; --doux:#8D94A5; --bord:#1E2940;
         --accent:#D4AF6A; --or:#D4AF6A; --vert:#3BC48F; --rouge:#FF6B5A; color-scheme: dark;
-        --serif: "New York", ui-serif, "Iowan Old Style", Georgia, serif;
-        --mono: ui-monospace, "SF Mono", Menlo, monospace; }
+        --serif: "New York", ui-serif, "Iowan Old Style", Cambria, Georgia, serif;
+        --mono: ui-monospace, "SF Mono", Menlo, "Cascadia Mono", Consolas, monospace; }
 @media (prefers-color-scheme: dark) {
   :root { --fond:#0A0F1C; --carte:#10182A; --texte:#ECE8DF; --doux:#8D94A5; --bord:#1E2940;
           --accent:#D4AF6A; --or:#D4AF6A; --vert:#3BC48F; --rouge:#FF6B5A; }

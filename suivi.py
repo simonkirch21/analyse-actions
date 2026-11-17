@@ -191,11 +191,25 @@ def alertes_recentes(n: int = 15) -> list:
 
 
 def notifier(titre: str, texte: str) -> None:
-    """Notification macOS (centre de notifications)."""
-    t = texte.replace('"', "'")
-    subprocess.run(["osascript", "-e", f'display notification "{t}" with title "{titre}" sound name "Glass"'],
-                   capture_output=True)
-
+    """Notification du système : Centre de notifications (Mac) ou notification Windows 10/11."""
+    try:
+        if chemins.MAC:
+            t = texte.replace('"', "'")
+            subprocess.run(["osascript", "-e", f'display notification "{t}" with title "{titre}" sound name "Glass"'],
+                           capture_output=True, timeout=10)
+        elif chemins.WINDOWS:
+            echap = lambda x: x.replace("'", "''").replace("&", "et").replace("<", "").replace(">", "")
+            script = (
+                "[Windows.UI.Notifications.ToastNotificationManager, Windows.UI.Notifications, ContentType = WindowsRuntime] > $null;"
+                "$x = [Windows.UI.Notifications.ToastNotificationManager]::GetTemplateContent([Windows.UI.Notifications.ToastTemplateType]::ToastText02);"
+                f"$t = $x.GetElementsByTagName('text'); $t.Item(0).AppendChild($x.CreateTextNode('{echap(titre)}')) > $null;"
+                f"$t.Item(1).AppendChild($x.CreateTextNode('{echap(texte)}')) > $null;"
+                "$n = [Windows.UI.Notifications.ToastNotification]::new($x);"
+                "[Windows.UI.Notifications.ToastNotificationManager]::CreateToastNotifier('Analyse Actions').Show($n)")
+            subprocess.run(["powershell", "-NoProfile", "-WindowStyle", "Hidden", "-Command", script],
+                           capture_output=True, timeout=20, creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
+    except Exception:
+        pass
 
 def fr(x: float, d: int = 2) -> str:
     return f"{x:,.{d}f}".replace(",", " ").replace(".", ",")

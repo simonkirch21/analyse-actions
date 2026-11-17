@@ -69,7 +69,7 @@ body.mode-comparer #vs { display: inline; }
 .sugg { display: grid; grid-template-columns: 96px 1fr auto; gap: 12px; align-items: center;
         padding: 9px 10px; border-radius: 8px; cursor: pointer; }
 .sugg.actif, .sugg:hover { background: var(--survol); }
-.sugg .tk { font: 600 13px ui-monospace, "SF Mono", Menlo, monospace; color: var(--accent);
+.sugg .tk { font: 600 13px ui-monospace, "SF Mono", Menlo, "Cascadia Mono", Consolas, monospace; color: var(--accent);
             overflow: hidden; text-overflow: ellipsis; }
 .sugg .nom { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .sugg .nom small { color: var(--doux); margin-left: 6px; }
@@ -276,8 +276,8 @@ body.vue-pf #ajout-suivi { display: none; }
   --eu: #3BC48F; --rouge: #FF6B5A; --orange: #F2A65A; --us: #8DB6FF; --growth: #E9B866;
   --ombre: 0 1px 2px rgba(0,0,0,.4), 0 10px 30px rgba(0,0,0,.35);
   color-scheme: dark;
-  --serif: "New York", ui-serif, "Iowan Old Style", Georgia, serif;
-  --mono: ui-monospace, "SF Mono", Menlo, monospace;
+  --serif: "New York", ui-serif, "Iowan Old Style", Cambria, Georgia, serif;
+  --mono: ui-monospace, "SF Mono", Menlo, "Cascadia Mono", Consolas, monospace;
   --ease: cubic-bezier(0.23, 1, 0.32, 1);
   --ease-io: cubic-bezier(0.77, 0, 0.175, 1);
   --rapide: 160ms; --normal: 240ms;
