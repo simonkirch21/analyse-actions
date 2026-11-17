@@ -381,6 +381,7 @@ button:active:not(:disabled), .chip:active, .indice:active { transform: scale(0.
         <button data-m="marches">Devises &amp; matières</button>
         <button data-m="macro">Économie</button>
         <button data-m="options">Options</button>
+        <button data-m="dcf">DCF</button>
       </div>
       <div class="segment" aria-label="Mes outils">
         <button data-m="portefeuille">Portefeuille<span class="compteur" id="nb-pf">0</span></button>
@@ -650,6 +651,17 @@ button:active:not(:disabled), .chip:active, .indice:active { transform: scale(0.
     </div>
   </section>
 
+  <section class="panneau-pf" id="panneau-dcf">
+    <div class="carte">
+      <h2 id="dcf-titre">Modèle DCF</h2>
+      <p class="aide">Le modèle d'évaluation des banques d'affaires : on projette le chiffre d'affaires, les marges et les
+        investissements sur 5 ans, on en déduit les flux de trésorerie disponibles (FCFF), qu'on actualise au coût du
+        capital (CMPC), puis on ajoute une valeur terminale. Choisis une action avec la barre de recherche. Les
+        <span class="dcf-bleu">chiffres en bleu</span> sont des hypothèses : modifie-les, tout se recalcule.</p>
+      <div id="dcf-contenu"></div>
+    </div>
+  </section>
+
   <section class="panneau-pf" id="panneau-options">
     <div class="carte">
       <h2 id="op-titre">Options cotées</h2>
@@ -802,6 +814,7 @@ function choisi(n, a) {
   if (mode === "fictifs") { choisirActionOrdre(a); R[1].champ.value = ""; return; }
   if (mode === "graphique") { ouvrirGraphique(a.ticker, a.nom); R[1].champ.value = ""; return; }
   if (mode === "options") { chargerOptions(a.ticker, a.nom); R[1].champ.value = ""; return; }
+  if (mode === "dcf") { ouvrirDCF(a.ticker, a.nom); R[1].champ.value = ""; return; }
   if (mode === "carte" || mode === "marches") { document.querySelector('#mode button[data-m="simple"]').click(); return lancerAnalyse(a, false); }
   majBouton();
   if (n === 1 && !choix[2]) R[2].champ.focus();
@@ -822,6 +835,7 @@ $("mode").addEventListener("click", (e) => {
     mode === "fictifs" ? "Choisir une action à acheter ou vendre : nom ou ticker" :
     mode === "graphique" ? "Action à afficher : nom ou ticker" :
     mode === "options" ? "Action américaine : nom ou ticker (ex. Apple, Nvidia)" :
+    mode === "dcf" ? "Action à évaluer : nom ou ticker (LVMH, Apple, Airbus…)" :
     "Rechercher une action : nom ou ticker (LVMH, Apple, ASML…)";
   majBouton();
   if (PANNEAUX[mode]) {
@@ -1053,7 +1067,7 @@ $("vider-pf").addEventListener("click", () => {
 });
 const PANNEAUX = { portefeuille: "panneau-pf", suivi: "panneau-suivi", simulateur: "panneau-sim", screener: "panneau-screener",
                    macro: "panneau-macro", fictifs: "panneau-fictifs", graphique: "panneau-graphique",
-                   carte: "panneau-carte", marches: "panneau-marches", options: "panneau-options" };
+                   carte: "panneau-carte", marches: "panneau-marches", options: "panneau-options", dcf: "panneau-dcf" };
 function ouvrirPanneau(id = "panneau-pf") {
   document.body.classList.remove("vue-pf");
   document.body.classList.add("compact");
@@ -1520,6 +1534,7 @@ function comparerDepuis(a, b) {
 }
 window.addEventListener("message", (e) => {
   const d = e.data || {};
+  if (d.type === "dcf" && d.ticker) { const a = ACTIONS.find(x => x.ticker === d.ticker); return ouvrirDCF(d.ticker, a ? a.nom : d.ticker); }
   if (d.type !== "comparer" || !d.t1 || !d.t2) return;
   const info = t => ACTIONS.find(a => a.ticker === t) || { ticker: t, nom: t, place: "" };
   comparerDepuis(info(d.t1), info(d.t2));
@@ -1725,5 +1740,6 @@ setInterval(() => { if ($("accueil").style.display !== "none") { chargerIndices(
 R[1].champ.focus();
 </script>
 <script src="pro.js"></script>
+<script src="dcf.js"></script>
 </body>
 </html>

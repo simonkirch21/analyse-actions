@@ -12,6 +12,7 @@ window.ouvertureModePro = function (m) {
   if (m === "graphique") setTimeout(dessinerGP, 30);
   if (m === "carte") chargerCarte();
   if (m === "marches") chargerMarches();
+  if (m === "dcf" && window.ouvertureDCF) ouvertureDCF();
   if (m === "options" && !opEtat.ticker) $("op-contenu").innerHTML = `<p class="note-a">Exemples : Apple (AAPL), Nvidia (NVDA), Tesla (TSLA), Microsoft (MSFT).</p>`;
 };
 
@@ -515,6 +516,7 @@ const COMMANDES = [
   { c: "TAUX", d: "Courbe des taux", x: "" },
   { c: "CAL", d: "Calendrier économique et résultats", x: "" },
   { c: "OPT AAPL", d: "Options cotées d'une action américaine", x: "" },
+  { c: "DCF MC.PA", d: "Modèle DCF complet d'une action (scénarios, DCF inversé, Excel)", x: "DCF" },
   { c: "PF", d: "Mon portefeuille", x: "+ AAPL : ajouter au portefeuille" },
   { c: "SUIVI", d: "Liste de suivi et agenda", x: "SUIVRE AAPL : ajouter" },
   { c: "BF", d: "Bourse fictive", x: "ACHAT 10 AIR.PA · VENTE 5 AIR.PA" },
@@ -537,7 +539,7 @@ function majCmd() {
   else {
     ajouter(v, "Exécuter cette commande", () => executerCmd(v), "Ta saisie");
     COMMANDES.filter(c => c.c.startsWith(mots[0]) && c.c !== V).slice(0, 4).forEach(c => ajouter(c.c, c.d, () => { $("cmd-champ").value = c.c.split(" ")[0] + " "; majCmd(); }));
-    const reste = mots.length > 1 && ["G", "OPT", "SIM", "SUIVRE", "+", "COMP"].includes(mots[0]) ? v.split(/\s+/).slice(-1)[0] : v;
+    const reste = mots.length > 1 && ["G", "OPT", "DCF", "SIM", "SUIVRE", "+", "COMP"].includes(mots[0]) ? v.split(/\s+/).slice(-1)[0] : v;
     chercher(reste).slice(0, 7).forEach(a => ajouter(a.ticker, `${echapper(a.nom)} <span class="x">${echapper(a.place)}</span>`,
       () => mots.length > 1 ? executerCmd(v.split(/\s+/).slice(0, -1).join(" ") + " " + a.ticker) : (fermerCmd(), allerMode("simple"), lancerAnalyse(a, false)), "Actions"));
   }
@@ -560,6 +562,7 @@ async function executerCmd(texte) {
   if (C === "CARTE") { const u = { CAC: "cac", EU: "eu", EURONEXT: "eu", SP: "sp", US: "sp" }[(args[0] || "CAC").toUpperCase()] || "cac";
     carteUnivers = u; $("carte-univers").querySelectorAll("button").forEach(x => x.classList.toggle("on", x.dataset.u === u)); return allerMode("carte"); }
   if (C === "G" || C === "GR" || C === "GRAPHIQUE") { const a = resoudre(args.join(" ")) || { ticker: "^FCHI", nom: "CAC 40" }; return ouvrirGraphique(a.ticker, a.nom); }
+  if (C === "DCF") { const a = resoudre(args.join(" ")); if (a) return ouvrirDCF(a.ticker, a.nom); return allerMode("dcf"); }
   if (C === "OPT" || C === "OPTIONS") { const a = resoudre(args.join(" ")); if (a) return chargerOptions(a.ticker, a.nom); return allerMode("options"); }
   if (C === "COMP" && args.length >= 2) return comparerDepuis(resoudre(args[0]), resoudre(args[1]));
   if (C === "SIM") { allerMode("simulateur"); const a = resoudre(args.join(" ")); if (a) choisirActifSim(a.ticker, a.nom); return; }

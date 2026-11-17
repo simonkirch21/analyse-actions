@@ -42,6 +42,8 @@ import fictifs
 import taux
 import calendrier
 import options_cotees
+import dcf_avance
+from datetime import date
 
 import chemins
 ICI = chemins.RESSOURCES
@@ -275,6 +277,28 @@ def api_options(ticker):
     return _action_fictive(lambda: options_cotees.chaine(ticker.upper(), request.args.get("echeance") or None))
 
 
+@app.post("/api/dcf/<ticker>")
+def api_dcf(ticker):
+    """Modèle DCF complet pour des hypothèses données (vides = valeurs par défaut)."""
+    if not NOM_VALIDE.match(ticker):
+        abort(400)
+    return _action_fictive(lambda: dcf_avance.calcul(ticker.upper(), _corps().get("hypotheses") or {}))
+
+
+@app.post("/api/dcf/<ticker>/excel")
+def api_dcf_excel(ticker):
+    """Prépare le classeur Excel du modèle ; il est ensuite téléchargé comme les autres exports."""
+    if not NOM_VALIDE.match(ticker):
+        abort(400)
+    def preparer():
+        r = dcf_avance.calcul(ticker.upper(), _corps().get("hypotheses") or {})
+        nom = f"DCF_{ticker.upper()}_{date.today()}"
+        RAPPORTS.mkdir(parents=True, exist_ok=True)
+        (RAPPORTS / f"{nom}.xlsx").write_bytes(dcf_avance.classeur(r))
+        return {"nom": nom}
+    return _action_fictive(preparer)
+
+
 @app.get("/api/macro")
 def api_macro():
     return _reponse(macro.tableau)
@@ -418,6 +442,10 @@ def contenu_export(format_: str, nom: str) -> bytes:
     """PDF ou Excel d'un rapport déjà calculé (identifié par son nom de fichier)."""
     if not NOM_VALIDE.match(nom) or format_ not in {"pdf", "xlsx"}:
         raise ValueError("Export invalide")
+    if nom.startswith("DCF_"):
+        if format_ != "xlsx":
+            raise ValueError("Export invalide")
+        return (RAPPORTS / f"{nom}.xlsx").read_bytes()
     if format_ == "pdf":
         return export.html_vers_pdf((RAPPORTS / f"{nom}.html").read_text(encoding="utf-8"))
     with open(RAPPORTS / f"{nom}.pkl", "rb") as f:

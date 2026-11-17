@@ -74,6 +74,12 @@ de ton compte) : ouvre-la depuis le Launchpad, Spotlight (Cmd+Espace) ou le Find
 - **Devises & matières premières** : change, pétrole, gaz, métaux, céréales, café, cryptomonnaies.
 - **Économie** : + courbe des taux (États-Unis, zone euro) avec détection d'inversion, et calendrier économique
   (événements de la semaine et de la suivante, résultats d'entreprises).
+- **Modèle DCF complet** (bouton DCF, ⌘K puis « DCF LVMH », ou depuis la section Valorisation d'un rapport) :
+  projection sur 5 ans du chiffre d'affaires, de l'EBITDA, de l'impôt, des investissements et du BFR jusqu'au FCFF,
+  chaque hypothèse modifiable (consensus des analystes pour la croissance à 1-2 ans) ; CMPC détaillé (bêta 5 ans
+  ajusté de Blume) ; valeur terminale par Gordon-Shapiro et par multiple de sortie des concurrents, avec ce que
+  chaque méthode suppose de l'autre ; pont VE → capitaux propres → valeur par action diluée ; trois scénarios
+  pondérés ; DCF inversé (croissance anticipée par le cours) ; tables de sensibilité ; export Excel avec formules.
 - **Options cotées** (actions américaines) : chaîne complète, volatilité implicite, sourire de volatilité,
   comparaison au prix Black-Scholes.
 - **Rapports** : nouvelle section « Qui détient l'action ? » (dirigeants, fonds, transactions des dirigeants).
@@ -153,6 +159,7 @@ Chaque partie peut aussi être lancée seule (`.venv/bin/python partieN_xxx.py A
 | `taux.py` | Courbe des taux | FRED (États-Unis) et BCE (zone euro) |
 | `calendrier.py` | Calendrier économique | flux public Forex Factory + Yahoo Finance |
 | `options_cotees.py` | Options cotées | chaîne Yahoo Finance, volatilité implicite |
+| `dcf_avance.py` | Modèle DCF complet | projection FCFF, deux valeurs terminales, scénarios, DCF inversé, sensibilités, classeur Excel en formules |
 | `interface/pro.js`, `pro.css` | Outils « pro » de l'interface | commandes, graphique, carte, marchés, options, accueil |
 | `export.py` | Exports | PDF (xhtml2pdf) et classeur Excel (openpyxl) |
 | `interpretation_financiere.py` | Explications de la partie 8 | notions, lecture des chiffres, repères normatifs et sectoriels (Banque de France 2022) |

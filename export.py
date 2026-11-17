@@ -81,6 +81,7 @@ def html_vers_pdf(page: str) -> bytes:
                "disponible dans l'application et dans la version HTML du rapport.</p>", p, flags=re.S)
     p = re.sub(r"<script.*?</script>", "", p, flags=re.S)
     p = re.sub(r"<td><button class='btn-comparer'.*?</button></td>", "<td></td>", p, flags=re.S)
+    p = re.sub(r"<p class='lien-dcf'>.*?</p>", "", p, flags=re.S)
     p = re.sub(r"<nav class='sommaire'>.*?</nav>", "", p, flags=re.S)
     p = re.sub(r"<p class='note'>Passe la souris.*?</p>", "", p, flags=re.S)
     # 4. Police complète (β, σ, ≤, →, −…) : DejaVu Sans, fournie avec matplotlib

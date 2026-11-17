@@ -342,6 +342,12 @@ def section_valorisation(a: dict) -> str:
     texte, tableaux, guide = ipv.section_valorisation(v, a["ticker"])
     h += "<h3>8.1 L'action est-elle chère ? Multiples, CMPC et DCF</h3>" + texte + tableaux
     h += ipv.calculatrice_dcf(v) + guide + a["graphiques"]["valorisation"]
+    # Dans l'application : ouvre le modèle DCF complet (scénarios, DCF inversé, export Excel)
+    t = html.escape(a["ticker"], quote=True)
+    h += (f"<p class='lien-dcf'><button class='btn-comparer btn-dcf' data-t='{t}'>Ouvrir le modèle DCF complet "
+          "(projection année par année, scénarios, DCF inversé, Excel) →</button></p>"
+          "<script>document.querySelectorAll('.btn-dcf').forEach(b => b.addEventListener('click', () => "
+          "window.parent.postMessage({type: 'dcf', ticker: b.dataset.t}, '*')));</script>")
     h += "<h3>8.2 Scores de santé financière : Altman et Piotroski</h3>" + ipv.section_scores(v)
     return h
 
