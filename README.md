@@ -14,14 +14,14 @@ d'investissement mensuel, un filtre d'actions, la macroéconomie, la courbe des 
 ## Installation
 
 **Le plus simple (Mac) :** télécharge `Analyse-Actions.dmg` dans la page
-[Releases](../../releases) du dépôt, ouvre-le et glisse l'application dans le dossier Applications.
+[Releases](https://github.com/simonkirch21/analyse-actions/releases/latest) du dépôt, ouvre-le et glisse l'application dans le dossier Applications.
 Au premier lancement : clic droit sur l'application → Ouvrir (elle n'est pas signée par Apple).
 
 **Depuis le code (Python 3.11 ou plus récent) :**
 
 ```bash
-git clone <adresse du dépôt>
-cd analyse-action
+git clone https://github.com/simonkirch21/analyse-actions.git
+cd analyse-actions
 python3 -m venv .venv
 .venv/bin/pip install -r requirements.txt
 .venv/bin/python app.py              # ouvre la fenêtre de l'application
