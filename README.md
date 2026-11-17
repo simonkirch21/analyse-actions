@@ -74,6 +74,11 @@ de ton compte) : ouvre-la depuis le Launchpad, Spotlight (Cmd+Espace) ou le Find
 - **Devises & matières premières** : change, pétrole, gaz, métaux, céréales, café, cryptomonnaies.
 - **Économie** : + courbe des taux (États-Unis, zone euro) avec détection d'inversion, et calendrier économique
   (événements de la semaine et de la suivante, résultats d'entreprises).
+- **Note d'analyse** en tête de chaque rapport, comme celles des banques : verdict sur la valorisation, thèse rédigée,
+  graphique « football field » (DCF, comparables PER et VE/EBITDA, objectifs des analystes, plus bas / plus haut
+  sur 52 semaines), catalyseurs et risques. Les **chiffres clés sont cliquables** (« d'où vient ce chiffre ? ») :
+  définition, calcul avec les chiffres de l'entreprise, repères et **rang dans le secteur** (≈ 1 350 entreprises).
+  Bouton « Note PDF » : la note sur une page, avec ses sources.
 - **Modèle DCF complet** (bouton DCF, ⌘K puis « DCF LVMH », ou depuis la section Valorisation d'un rapport) :
   projection sur 5 ans du chiffre d'affaires, de l'EBITDA, de l'impôt, des investissements et du BFR jusqu'au FCFF,
   chaque hypothèse modifiable (consensus des analystes pour la croissance à 1-2 ans) ; CMPC détaillé (bêta 5 ans
@@ -159,6 +164,7 @@ Chaque partie peut aussi être lancée seule (`.venv/bin/python partieN_xxx.py A
 | `taux.py` | Courbe des taux | FRED (États-Unis) et BCE (zone euro) |
 | `calendrier.py` | Calendrier économique | flux public Forex Factory + Yahoo Finance |
 | `options_cotees.py` | Options cotées | chaîne Yahoo Finance, volatilité implicite |
+| `note_analyse.py` | Note d'analyse | fourchettes de valeur, football field, verdict, thèse, chiffres clés expliqués et rang sectoriel, note PDF d'une page |
 | `dcf_avance.py` | Modèle DCF complet | projection FCFF, deux valeurs terminales, scénarios, DCF inversé, sensibilités, classeur Excel en formules |
 | `interface/pro.js`, `pro.css` | Outils « pro » de l'interface | commandes, graphique, carte, marchés, options, accueil |
 | `export.py` | Exports | PDF (xhtml2pdf) et classeur Excel (openpyxl) |

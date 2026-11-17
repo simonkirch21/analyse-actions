@@ -43,6 +43,7 @@ import taux
 import calendrier
 import options_cotees
 import dcf_avance
+import note_analyse
 from datetime import date
 
 import chemins
@@ -440,12 +441,18 @@ def rapport(nom):
 # ---------------------------------------------------------------------------
 def contenu_export(format_: str, nom: str) -> bytes:
     """PDF ou Excel d'un rapport déjà calculé (identifié par son nom de fichier)."""
-    if not NOM_VALIDE.match(nom) or format_ not in {"pdf", "xlsx"}:
+    if not NOM_VALIDE.match(nom) or format_ not in {"pdf", "xlsx", "note"}:
         raise ValueError("Export invalide")
     if nom.startswith("DCF_"):
         if format_ != "xlsx":
             raise ValueError("Export invalide")
         return (RAPPORTS / f"{nom}.xlsx").read_bytes()
+    if format_ == "note":                       # note d'analyse d'une page
+        with open(RAPPORTS / f"{nom}.pkl", "rb") as f:
+            a = pickle.load(f)
+        if not a.get("note"):
+            raise FileNotFoundError("Note absente : relance l'analyse")
+        return export.page_simple_vers_pdf(note_analyse.page_pdf(a))
     if format_ == "pdf":
         return export.html_vers_pdf((RAPPORTS / f"{nom}.html").read_text(encoding="utf-8"))
     with open(RAPPORTS / f"{nom}.pkl", "rb") as f:
@@ -464,10 +471,14 @@ def telecharger(format_, nom):
         contenu = contenu_export(format_, nom)
     except (ValueError, FileNotFoundError):
         abort(404)
-    types = {"pdf": "application/pdf",
+    types = {"pdf": "application/pdf", "note": "application/pdf",
              "xlsx": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"}
     return Response(contenu, mimetype=types[format_],
-                    headers={"Content-Disposition": f'attachment; filename="{nom}.{format_}"'})
+                    headers={"Content-Disposition": f'attachment; filename="{nom_fichier_export(format_, nom)}"'})
+
+
+def nom_fichier_export(format_: str, nom: str) -> str:
+    return f"{nom}_note.pdf" if format_ == "note" else f"{nom}.{format_}"
 
 
 class Api:
@@ -476,7 +487,7 @@ class Api:
     def enregistrer(self, format_: str, nom: str) -> str:
         import webview
         fenetre = webview.windows[0]
-        choix = fenetre.create_file_dialog(webview.SAVE_DIALOG, save_filename=f"{nom}.{format_}")
+        choix = fenetre.create_file_dialog(webview.SAVE_DIALOG, save_filename=nom_fichier_export(format_, nom))
         if not choix:
             return ""                                   # l'utilisateur a annulé
         chemin = choix if isinstance(choix, str) else choix[0]

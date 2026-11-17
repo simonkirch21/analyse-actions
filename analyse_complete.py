@@ -36,6 +36,7 @@ import partie9_valorisation as p9
 import interpretation_valorisation as ipv
 import actualites
 import base_fondamentale
+import note_analyse
 
 import chemins
 DOSSIER_RAPPORTS = chemins.RAPPORTS
@@ -149,12 +150,23 @@ def analyser(ticker: str, indice: str, periode: str, progression=print) -> dict:
     if val["applicable"]:
         graphiques["valorisation"] = image_base64(p9.graphique, val, ticker)
 
-    return dict(ticker=ticker, indice=indice, periode=periode, prix=prix, infos=infos,
-                prix_indice=prix_indice, fin=fin, val=val, actus=actus, concurrents=concurrents, actionnaires=actionnaires,
-                perf=perf, annuels=annuels, capm=capm, relatif=relatif,
-                distrib=distrib, tab_var=tab_var, bt=bt, signaux=signaux,
-                tab_strat=tab_strat, mu=mu, sigma=sigma, simu=simu, opt=opt,
-                graphiques=graphiques)
+    a = dict(ticker=ticker, indice=indice, periode=periode, prix=prix, infos=infos,
+             prix_indice=prix_indice, fin=fin, val=val, actus=actus, concurrents=concurrents, actionnaires=actionnaires,
+             perf=perf, annuels=annuels, capm=capm, relatif=relatif,
+             distrib=distrib, tab_var=tab_var, bt=bt, signaux=signaux,
+             tab_strat=tab_strat, mu=mu, sigma=sigma, simu=simu, opt=opt,
+             graphiques=graphiques)
+
+    # Note d'analyse : fourchettes de valeur (DCF, comparables, analystes), thèse, chiffres clés
+    progression("Note d'analyse : méthodes de valorisation et comparaisons sectorielles…")
+    try:
+        a["note"] = note_analyse.construire(a)
+        if a["note"]["fourchettes"]:
+            graphiques["football"] = image_base64(note_analyse.graphique_football, a["note"])
+    except Exception as erreur:
+        a["note"] = None
+        print("Note d'analyse impossible :", erreur)
+    return a
 
 
 def section_analyse_financiere(a: dict) -> str:
@@ -466,6 +478,18 @@ def signe(x, texte):
     return f'<span class="{"pos" if x >= 0 else "neg"}">{texte}</span>'
 
 
+KPI_EXPLIQUES = {"Volatilité": "volatilite", "Sharpe": "sharpe", "Perte maximale": "drawdown", "Bêta": "beta"}
+
+
+def _x(a: dict, libelle: str) -> str:
+    """Rend une tuile cliquable (« d'où vient ce chiffre ? ») si la note d'analyse l'explique."""
+    cle = KPI_EXPLIQUES.get(libelle)
+    n = a.get("note")
+    if cle and n and any(c["cle"] == cle for c in n["chiffres"]):
+        return f' data-x="{cle}" tabindex="0" role="button"'
+    return ""
+
+
 def generer_html(a: dict) -> str:
     t, i = html.escape(a["ticker"]), html.escape(ip.nom_indice(a["indice"]))
     infos, perf, capm, rel = a["infos"], a["perf"], a["capm"], a["relatif"]
@@ -488,24 +512,26 @@ def generer_html(a: dict) -> str:
     ]
     h = f"""<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Analyse {t}</title><style>{CSS}{ip.CSS}{ipf.CSS}{ipv.CSS}</style></head><body><main>
+<link rel="icon" href="data:,"><title>Analyse {t}</title><style>{CSS}{ip.CSS}{ipf.CSS}{ipv.CSS}{note_analyse.CSS}</style></head><body><main>
 <h1>{nom} <span class="note">({t})</span></h1>
 <div class="sous-titre">{html.escape(str(infos.get('Secteur') or ''))}
  · {html.escape(str(infos.get('Pays') or ''))} · indice de référence {i}
  · données du {prix.index[0].date()} au {prix.index[-1].date()} · rapport du {date.today()}</div>
 <div class="kpis">""" + "".join(
-        f'<div class="kpi" title="{html.escape(ip.AIDE_KPI.get(l, ""))}"><div class="l">{l}</div>'
+        f'<div class="kpi"{_x(a, l)} title="{html.escape(ip.AIDE_KPI.get(l, ""))}"><div class="l">{l}</div>'
         f'<div class="v">{v}</div>{pastilles.get(l, "")}</div>' for l, v in kpis
     ) + "</div>"
-    h += ("<p class='note'>Passe la souris sur un chiffre pour voir sa définition. "
+    h += ("<p class='note'>Passe la souris sur un chiffre pour voir sa définition (clique sur ceux encadrés d'or au survol pour le détail du calcul). "
           "Chaque partie commence par une explication de la notion, puis ce qu'il faut "
           "retenir pour cette action, puis les chiffres détaillés et les graphiques.</p>")
     h += ip.resume_debutant(a)
-    h += ("<nav class='sommaire'><b>Sommaire :</b> <a href='#synthese'>Synthèse</a><a href='#actus'>Actualités</a><a href='#concurrents'>Concurrents</a><a href='#actionnaires'>Actionnaires</a>"
+    h += ("<nav class='sommaire'><b>Sommaire :</b> " + ("<a href='#note'>Note d'analyse</a>" if a.get("note") else "") + "<a href='#synthese'>Synthèse</a><a href='#actus'>Actualités</a><a href='#concurrents'>Concurrents</a><a href='#actionnaires'>Actionnaires</a>"
           "<a href='#s1'>1. Données</a><a href='#s2'>2. Performance</a><a href='#s3'>3. Marché</a>"
           "<a href='#s4'>4. Risque</a><a href='#s5'>5. Technique</a><a href='#s6'>6. Simulation</a>"
           "<a href='#s7'>7. Analyse financière de l'entreprise</a>"
           "<a href='#s8'>8. Valorisation et scores</a></nav>")
+
+    h += note_analyse.section_html(a)
 
     # --- Synthèse
     h += "<h2>Synthèse</h2><div class='colonnes'>"

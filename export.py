@@ -60,6 +60,20 @@ def retirer_media(texte: str) -> str:
         i = k
 
 
+def page_simple_vers_pdf(page: str) -> bytes:
+    """Page déjà mise en forme pour le papier (note d'analyse) : seulement la police complète."""
+    from xhtml2pdf import pisa
+    from pathlib import Path
+    import matplotlib
+    polices = Path(matplotlib.get_data_path()) / "fonts" / "ttf"
+    police = (f"@font-face {{ font-family: DejaVu; src: url('{polices / 'DejaVuSans.ttf'}'); }}"
+              f"@font-face {{ font-family: DejaVu; font-weight: bold; src: url('{polices / 'DejaVuSans-Bold.ttf'}'); }}"
+              "body, td, th, p, li, div, span, b, h1, h2, h3 { font-family: DejaVu; }")
+    tampon = io.BytesIO()
+    pisa.CreatePDF(page.replace("</style>", police + "</style>", 1), dest=tampon, encoding="utf-8")
+    return tampon.getvalue()
+
+
 def html_vers_pdf(page: str) -> bytes:
     from xhtml2pdf import pisa   # import ici : seulement si on exporte
 
@@ -82,6 +96,7 @@ def html_vers_pdf(page: str) -> bytes:
     p = re.sub(r"<script.*?</script>", "", p, flags=re.S)
     p = re.sub(r"<td><button class='btn-comparer'.*?</button></td>", "<td></td>", p, flags=re.S)
     p = re.sub(r"<p class='lien-dcf'>.*?</p>", "", p, flags=re.S)
+    p = re.sub(r"<aside class='na-tiroir'.*?</aside>", "", p, flags=re.S)
     p = re.sub(r"<nav class='sommaire'>.*?</nav>", "", p, flags=re.S)
     p = re.sub(r"<p class='note'>Passe la souris.*?</p>", "", p, flags=re.S)
     # 4. Police complète (β, σ, ≤, →, −…) : DejaVu Sans, fournie avec matplotlib

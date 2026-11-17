@@ -433,6 +433,7 @@ button:active:not(:disabled), .chip:active, .indice:active { transform: scale(0.
   <button id="ajout-pf" title="Ajouter cette action à ton portefeuille">+ Portefeuille</button>
   <button id="ajout-suivi" title="Surveiller cette action (alertes, agenda des résultats et dividendes)">☆ Suivre</button>
   <button id="retour-pf" title="Revenir à la liste des actions du portefeuille">Modifier le portefeuille</button>
+  <button id="export-note" title="Enregistrer la note d'analyse d'une page (verdict, football field, chiffres clés) en PDF">Note PDF</button>
   <button id="export-pdf" title="Enregistrer le rapport en PDF">PDF</button>
   <button id="export-xlsx" title="Enregistrer tous les chiffres dans un classeur Excel">Excel</button>
   <button id="actualiser" title="Recalculer avec les données les plus récentes">Actualiser</button>
@@ -946,6 +947,7 @@ async function suivre(url, corps, titre, sous, etapesPrevues) {
 function afficherRapport(s, titre) {
   $("chargement").classList.remove("ouvert");
   nomRapport = s.nom;
+  $("export-note").hidden = !(courant && courant.type === "simple");   // la note n'existe que pour une action
   $("rapport").src = s.rapport;
   $("rapport").classList.add("ouvert");
   $("outils").classList.add("ouvert");
@@ -978,7 +980,7 @@ async function exporter(format) {
   if (!nomRapport) return;
   const bouton = $("export-" + format), msg = $("message-export");
   bouton.disabled = true;
-  msg.textContent = format === "pdf" ? "Création du PDF…" : "Création du classeur Excel…";
+  msg.textContent = format === "xlsx" ? "Création du classeur Excel…" : format === "note" ? "Création de la note d'analyse…" : "Création du PDF…";
   try {
     if (window.pywebview && window.pywebview.api) {
       const chemin = await window.pywebview.api.enregistrer(format, nomRapport);
@@ -994,6 +996,7 @@ async function exporter(format) {
   }
 }
 $("export-pdf").addEventListener("click", () => exporter("pdf"));
+$("export-note").addEventListener("click", () => exporter("note"));
 $("export-xlsx").addEventListener("click", () => exporter("xlsx"));
 
 // ---------------------------------------------------------------------------
