@@ -1,6 +1,6 @@
 <div align="center">
 
-# 📈 Analyse Actions
+# Analyse Actions
 
 **Application d'analyse boursière pour débutants et étudiants en finance, écrite en Python.**
 
@@ -11,7 +11,7 @@ On tape le nom d'une action et on obtient un rapport complet **et expliqué** : 
 ![Windows](https://img.shields.io/badge/Windows-10%20%2F%2011-0078D6?logo=windows)
 ![Python](https://img.shields.io/badge/Python-3.11%2B-3776AB?logo=python&logoColor=white)
 
-[**Télécharger**](https://github.com/simonkirch21/analyse-actions/releases/latest) · [**Page de présentation**](https://simonkirch21.github.io/analyse-actions/) · [Fonctionnalités](#-fonctionnalités) · [Installer depuis le code](#-installer-depuis-le-code) · [Architecture](#-architecture)
+[**Télécharger**](https://github.com/simonkirch21/analyse-actions/releases/latest) · [**Page de présentation**](https://simonkirch21.github.io/analyse-actions/) · [Fonctionnalités](#fonctionnalités) · [Installer depuis le code](#installer-depuis-le-code) · [Architecture](#architecture)
 
 <img src="docs/images/accueil.jpg" alt="Accueil : tableau de bord des marchés" width="800">
 
@@ -21,7 +21,7 @@ On tape le nom d'une action et on obtient un rapport complet **et expliqué** : 
 
 ---
 
-## 🚀 En bref
+## En bref
 
 - **7 733 actions** proposées dans la recherche (toutes les places Euronext, toutes les actions cotées aux États-Unis, DAX, FTSE 100 et 250, SMI, IBEX 35, OMX Stockholm 30). Toute autre action cotée dans le monde est trouvée par une **recherche Yahoo Finance en direct**.
 - **Un rapport en 8 parties** pour chaque action, avec pour chaque chiffre : « C'est quoi ? », comment le lire, et des repères.
@@ -29,7 +29,7 @@ On tape le nom d'une action et on obtient un rapport complet **et expliqué** : 
 - **Marchés, économie, portefeuille, bourse fictive, simulateur, filtre d'actions**, réunis dans une seule application.
 - **Mac et Windows**, thème sombre, clair ou automatique, exports PDF et Excel.
 
-## 📥 Télécharger
+## Télécharger
 
 Sur la [page de présentation](https://simonkirch21.github.io/analyse-actions/) ou dans les [Releases](https://github.com/simonkirch21/analyse-actions/releases/latest) :
 
@@ -42,7 +42,7 @@ L'application est **autonome** : elle embarque Python et toutes ses bibliothèqu
 
 ---
 
-## ✨ Fonctionnalités
+## Fonctionnalités
 
 ### 1. Analyser une action
 
@@ -123,7 +123,7 @@ Accessible par le bouton DCF, par la commande `DCF LVMH`, ou depuis la section V
 
 ---
 
-## 🛠 Installer depuis le code
+## Installer depuis le code
 
 Python 3.11 ou plus récent.
 
@@ -175,7 +175,7 @@ Les rapports y sont enregistrés dans `rapports/`. En lançant directement les f
 
 ---
 
-## 🧱 Architecture
+## Architecture
 
 | Fichier | Rôle |
 |---|---|
@@ -200,7 +200,7 @@ Les rapports y sont enregistrés dans `rapports/`. En lançant directement les f
 
 ---
 
-## ⚠️ Hypothèses et limites
+## Hypothèses et limites
 
 - Taux sans risque fixé à 3 % (`TAUX_SANS_RISQUE` dans `partie2_performance.py`).
 - Les indices Yahoo (`^FCHI`, `^GSPC`) sont des indices de prix, sans dividendes, alors que les actions sont en dividendes réinvestis : l'alpha est légèrement surestimé.
